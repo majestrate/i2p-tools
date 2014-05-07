@@ -40,3 +40,8 @@ nosetests.xml
 
 # c++
 *.o
+i2tun/i2tun
+
+# misc
+*.destination
+a.out
