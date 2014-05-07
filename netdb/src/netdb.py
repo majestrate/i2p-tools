@@ -1,5 +1,8 @@
 ##
-## Python Netdb Reader
+## i2p netdb parser
+##
+## Author: Jeff
+## MIT Liecense 2014
 ##
 import os,sys,struct,time,hashlib,fnmatch,io
 import logging
