@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3.4
 from i2p.i2cp import client as i2cp
 import pytun
 import threading
@@ -14,16 +14,19 @@ class IPV4Handler(i2cp.I2CPHandler):
         self._iface.addr = our_addr
         self._iface.dstaddr = their_addr
         self._iface.mtu = mtu
+        self._iface.up()
 
     def session_made(self, con):
         print ('we are {}'.format(con.dest.base32()))
         self.con = con
-        threading.Thread(target=self.mainloop, args=(con,))
+        threading.Thread(target=self.mainloop, args=(con,)).start()
 
     def mainloop(self, con):
         while True:
-            buff = self._iface.recv()
-            con.send_dgram(self._them, buff)
+            print ('read')
+            buff = self._iface.read(self._iface.mtu)
+            print ('send')
+            self.con.send_dgram(self._them, buff)
 
     def got_dgram(self, dest, data, srcport, dstport):
         if dest.base32() == self._them:
@@ -32,6 +35,8 @@ class IPV4Handler(i2cp.I2CPHandler):
 
 def main():
     import argparse
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
     ap = argparse.ArgumentParser()
     ap.add_argument('--remote', required=True, type=str)
     ap.add_argument('--our-addr', required=True, type=str)
