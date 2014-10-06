@@ -141,7 +141,7 @@ class Entry:
         self.valid = False
         with open(filename, 'rb') as fr:
             self._load(fr)
-            self.routerHash = filename.split('routerInfo-')[-1].split('.dat')[0]
+            #self.routerHash = 
             
     def _load(self, fd):
         """
@@ -213,6 +213,6 @@ def inspect(hook=None,netdb_dir=os.path.join(os.environ['HOME'],'.i2p','netDb'))
     insp.run(netdb_dir)
 
 
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    inspect()
+#if __name__ == '__main__':
+#    logging.basicConfig(level=logging.INFO)
+#    inspect()
