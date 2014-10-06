@@ -23,9 +23,7 @@ class IPV4Handler(i2cp.I2CPHandler):
 
     def mainloop(self, con):
         while True:
-            print ('read')
             buff = self._iface.read(self._iface.mtu)
-            print ('send')
             self.con.send_dsa_dgram(self._them, buff)
 
     def got_dgram(self, dest, data, srcport, dstport):
