@@ -26,7 +26,7 @@ class IPV4Handler(i2cp.I2CPHandler):
             print ('read')
             buff = self._iface.read(self._iface.mtu)
             print ('send')
-            self.con.send_dgram(self._them, buff)
+            self.con.send_dsa_dgram(self._them, buff)
 
     def got_dgram(self, dest, data, srcport, dstport):
         if dest.base32() == self._them:
@@ -35,8 +35,6 @@ class IPV4Handler(i2cp.I2CPHandler):
 
 def main():
     import argparse
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
     ap = argparse.ArgumentParser()
     ap.add_argument('--remote', required=True, type=str)
     ap.add_argument('--our-addr', required=True, type=str)
