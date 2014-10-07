@@ -46,7 +46,7 @@ def main():
     args = ap.parse_args()
 
     handler = IPV4Handler(args.remote, args.our_addr, args.their_addr, args.mtu)
-    con = i2cp.Connection(handler, i2cp_host=args.i2cp_host, i2cp_port=args.i2cp_port, session_options={'inbound.quantity' : '8', 'outbound.quantity' : '8', 
+    con = i2cp.Connection(handler, i2cp_host=args.i2cp_host, i2cp_port=args.i2cp_port, session_options={'inbound.quantity' : '2', 'outbound.quantity' : '2', 
                                                                                                         'i2cp.dontPublishLeaseSet' : 'false' })
     con.open()
     con.start()
