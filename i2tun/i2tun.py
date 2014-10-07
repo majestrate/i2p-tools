@@ -33,7 +33,9 @@ class IPV4Handler(i2cp.I2CPHandler):
 
 def main():
     import argparse
+    import logging
     ap = argparse.ArgumentParser()
+    logging.basicConfig()
     ap.add_argument('--remote', required=True, type=str)
     ap.add_argument('--our-addr', required=True, type=str)
     ap.add_argument('--their-addr', required=True, type=str)
