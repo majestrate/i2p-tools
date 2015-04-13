@@ -11,5 +11,5 @@ export SAM_TUN_IFACE=i2p0
 export SAM_TUN_MTU=4096
 export SAM_TUN_US=10.100.0.1
 export SAM_TUN_THEM=10.100.0.2
-export SAM_VERBOSE=yes
-gdb $(dirname $0)/samtun.bin 
+export SAM_VERBOSE=nah
+$(dirname $0)/samtun.bin $1
