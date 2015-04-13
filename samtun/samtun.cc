@@ -18,10 +18,14 @@
 #include <arpa/inet.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
+#include <signal.h>
 #include <cstring>
 #include <thread>
 #include <memory>
-
+#include "address.hpp"
+extern "C" {
+#include "ifr6.h"
+}
 #define ASSERT_FD(fd) { if (fd == -1) { std::string msg(__FILE__); msg += ":" + std::to_string(__LINE__); perror(msg.c_str()); exit(1); } }
 
 #define CLOSE_IF_OPEN(fd) { if ( fd != -1 ) { close(fd); } }
@@ -48,8 +52,6 @@ namespace samtun {
   std::string privkey;
   std::string privkey_fname;
 
-  // their remote destination
-  std::string remote_dest;
   // our destination
   std::string our_dest;
   
@@ -64,6 +66,9 @@ namespace samtun {
   // our tun address
   in_addr_t us_addr;
 
+  // our node's ipv6 address
+  in6_addr node_addr;
+  
   // network mtu
   size_t mtu;
   
@@ -124,50 +129,44 @@ namespace samtun {
     }
 
     // open socket for setting address, mtu, etc
-    int sfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    // set our address
-    sockaddr_in addr;
-    memset(&addr, 0, sizeof(sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = us_addr;
-    memcpy(&ifr.ifr_addr, &addr, sizeof(sockaddr_in));
-    if (ioctl(sfd, SIOCSIFADDR, &ifr) < 0) {
-      perror("SIOCSIFADDR");
+    int sfd6 = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP);
+    // get our interface's index
+    if (ioctl(sfd6, SIOCGIFINDEX, &ifr) < 0 ) {
+      perror("SIOCGIFINDEX6");
       exit(1);
     }
-
-    // set their address
-    memset(&addr, 0, sizeof(sockaddr_in));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = them_addr;
-    memcpy(&ifr.ifr_addr, &addr, sizeof(sockaddr_in));
-    if (ioctl(sfd, SIOCSIFDSTADDR, &ifr) < 0) {
-      perror("SIOCSIFDSTADDR");
+    
+    in6_ifreq ifr6;
+    memset(&ifr6, 0, sizeof(ifr6));
+    ifr6.ifr6_prefixlen = 8;
+    ifr6.ifr6_ifindex = ifr.ifr_ifindex;
+    memcpy(&ifr6.ifr6_addr, &node_addr, sizeof(in6_addr));
+    
+    if (ioctl(sfd6, SIOCSIFADDR, &ifr6) < 0 ) {
+      perror("SIOCSIFADDR6");
       exit(1);
     }
-
     // set mtu
     ifr.ifr_mtu = mtu;
-    if (ioctl(sfd, SIOCSIFMTU, &ifr) < 0) {
-      perror("SIOCSIFMTU");
+    if (ioctl(sfd6, SIOCSIFMTU, &ifr) < 0) {
+      perror("SIOCSIFMTU4");
       exit(1);
     }
 
     // get flags
-    if (ioctl(sfd, SIOCGIFFLAGS, &ifr) < 0) {
+    if (ioctl(sfd6, SIOCGIFFLAGS, &ifr) < 0) {
       perror("SIOCGIFFLAGS");
       exit(1);
     }
 
     // set interface flags as up
-    ifr.ifr_flags |= IFF_UP;
-    if (ioctl(sfd, SIOCSIFFLAGS, &ifr) < 0) {
+    ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+    if (ioctl(sfd6, SIOCSIFFLAGS, &ifr) < 0) {
       perror("SIOCSIFFLAGS");
       exit(1);
     }
-    // close socket for setting stuff
-    close(sfd);
+    // close sockets
+    close(sfd6);
   }
 
   // load private keys
@@ -193,6 +192,12 @@ namespace samtun {
 
   // find a privatekey and save it to file
   void extract_and_save_key(std::string line) {
+    if (line.find("RESULT=OK") == std::string::npos ) {
+      std::cout << "failed to open sam session: ";
+      std::cout << line;
+      std::cout << std::endl;
+      exit(1);
+    }
     auto pos = line.find("DESTINATION=");
     if (pos != std::string::npos ) {
       auto part = line.substr(pos+12);
@@ -238,9 +243,6 @@ namespace samtun {
     std::string sam_recv_host = std::getenv("SAM_RECV_HOST");
     std::string sam_recv_port = std::getenv("SAM_RECV_PORT");
     iface_name = std::getenv("SAM_TUN_IFACE");
-    std::string sam_us_addr = std::getenv("SAM_TUN_US");
-    std::string sam_them_addr = std::getenv("SAM_TUN_THEM");
-    std::string sam_net_mtu = std::getenv("SAM_TUN_MTU");
     
     privkey_fname = std::getenv("SAM_KEYFILE");
     
@@ -254,9 +256,6 @@ namespace samtun {
       std::cerr << "udp port   " << sam_udp_port << std::endl;
       std::cerr << "recv host  " << sam_recv_host << std::endl;
       std::cerr << "recv port  " << sam_recv_port << std::endl;
-      std::cerr << "us addr    " << sam_us_addr << std::endl;
-      std::cerr << "them addr  " << sam_them_addr << std::endl;
-      std::cerr << "MTU        " << sam_net_mtu << std::endl;
     }
 
     // check nickname set
@@ -297,18 +296,7 @@ namespace samtun {
       exit(1);
     }
 
-    // set mtu
-    int net_mtu = std::atoi(sam_net_mtu.c_str());
-    if ( net_mtu == - 1) {
-      std::cerr << "bad mtu " << sam_net_mtu;
-      std::cerr << std::endl;
-      exit(1);
-    }
-    mtu = net_mtu;
-    
-    // set our / their tun addresses
-    inet_pton(AF_INET, sam_us_addr.c_str(), &us_addr);
-    inet_pton(AF_INET, sam_them_addr.c_str(), &them_addr);
+    mtu = 8 * 1024;
 
     // set command address
     sam_cmd_addr.sin_family = AF_INET;
@@ -375,6 +363,13 @@ namespace samtun {
     sam_cmd_writeline("NAMING LOOKUP NAME=ME");
     line = sam_cmd_readline();
     our_dest = get_name_lookup_result(line);
+
+    // compute our node's ipv6 address
+    compute_address(our_dest, &node_addr);
+    
+    std::cout << "our ipv6 address is " << addr_tostring(node_addr);
+    std::cout << std::endl;
+    
     std::cout << "our destination is: " << our_dest;
     std::cout << std::endl;
     _ready = true;
@@ -405,70 +400,66 @@ namespace samtun {
     return res;
   }
 
-  // get in_addr for remote destination
-  // return false if we don't know them
-  bool get_address_for_remote(std::string remote, in_addr_t * addr) {
-    if (remote == remote_dest) {
-      *addr = them_addr;
-      return true;
-    }
-    return false;
-  }
-
-  // resolve the base64 destination for an inet address
-  // return empty string on failure
-  std::string get_remote_for_address(in_addr_t addr) {
-    if (addr == them_addr) {
-      return remote_dest;
-    } return "";
-  }
-  
-  // get ip packet header from a buffer
-  // return false if we can't
-  bool get_ip_header(char * buff, size_t bufflen, iphdr * packet) {
-    if (bufflen < sizeof(iphdr) ) {
-      return false;
-    }
-    memcpy(&packet->saddr, buff+12, 4);
-    memcpy(&packet->daddr, buff+16, 4);
-    return true;
-  }
-  
   // we got a sam datagram from addr 
   void got_sam_datagram(std::string addr, char * buff, size_t bufflen) {
     if (verbose) {
       std::cerr << "got a datagram from " << addr << " " << std::to_string(bufflen) << "B";
       std::cerr << std::endl;
     }
-    iphdr packet;
-    // can we get the ip header out? is this remote destination known ?
-    if (get_ip_header(buff, bufflen, &packet) && get_address_for_remote(addr, &packet.saddr)) {
-      // put our address into the ip header as destination address
-      memcpy(&packet.daddr, &us_addr, sizeof(packet.daddr));
-      // put the header back onto the packet in the buffer
-      // memcpy(buff, &packet, sizeof(iphdr));
-      // write this to the tun device;
-      write(tunfd, buff, bufflen);
-    } else if (verbose) {
-      std::cerr << "got unwarrented packet from " << addr;
-      std::cerr << std::endl;
+
+    // if we don't already know this destination cache it
+    if (!cached_destination(addr)) {
+      save_endpoint(addr);
     }
+    // get destination address
+    in6_addr dst;
+    memcpy(&dst, buff+28, 16);
+    
+    // is this packet for us?
+    if (!memcmp(&dst, &node_addr, 16)) {
+      // no it's not wtf?
+      // drop it
+      return;
+    }
+
+    // get source address
+    in6_addr src;
+    compute_address(addr, &src);
+    // put it into the packet
+    // if they spoof this will be an invalid packet
+    memcpy(buff+8, &src, 16);
+    
+    // write packet to the tun device;
+    write(tunfd, buff, bufflen);
+    
   }
 
   // called when we got an ip packet from the user
   void got_ip_packet(char * buff, size_t bufflen) {
-    
-    if (verbose) {
-      std::cerr << "got_ip_packet " << std::to_string(bufflen) << std::endl;
+    if(bufflen <= 36) {
+      if (verbose) {
+        std::cerr << "packet too small " << std::to_string(bufflen);
+        std::cerr << std::endl;
+      }
+      // packet too small
+      return;
     }
-    
     // get the remote destination for this packet's destination ip
-    std::string dest = get_remote_for_address(them_addr);
+    in6_addr dst;
+    memcpy(&dst, buff+28, 16);
+    std::string dest = lookup_destination(dst);
     // do we know it?
-    if (dest.size() > 0) {
+    if (!dest.empty()) {
       // yes, send it to them
       sam_sendto(dest, buff, bufflen);
-    } else {} // nope, we don't know who it's for. drop it.  
+    } else {
+      // nope, we don't know who it's for. drop it.
+      if (verbose) {
+        std::cerr << "we don't know the address for ";
+        std::cerr << addr_tostring(dst);
+        std::cerr << std::endl;
+      }
+    } 
   }
 
   // called when we got a datagram from the i2p router
@@ -496,19 +487,8 @@ namespace samtun {
   }
   
   void run() {
-    // is this a b32 or name ?
-    // look it up
-    if (remote_dest.find(".i2p") != std::string::npos ) {
-      std::string name = remote_dest;
-      do {
-        std::cout << "looking up remote destination... ";
-        std::stringstream ss;
-        ss << "NAMING LOOKUP NAME=" << name;
-        sam_cmd_writeline(ss.str());
-        remote_dest = get_name_lookup_result(sam_cmd_readline());
-      } while(remote_dest.size() == 0);
-    }
-    std::cout << "remote destination resolved: " << remote_dest;
+    // restore our address cache
+    restore_cache();
     // open tun interface
     open_tun();
 
@@ -573,10 +553,23 @@ namespace samtun {
   }
 }
 
+bool exiting;
+
+void handle_sig(int sig) {
+  if (exiting) {
+    std::cout << "already exiting..." << std::endl;
+  } else {
+    exiting = true;
+    persist_cache();
+  }
+}
+
 int main(int argc, char * argv[]) {
   samtun::init();
-  if( samtun::ready() && argc == 2) {
-    samtun::remote_dest = argv[1];
+  if( samtun::ready()) {
+    exiting = false;
+    signal(SIGINT, handle_sig);
+    signal(SIGTERM, handle_sig);
     samtun::run();
   }
 }
