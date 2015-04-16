@@ -1,6 +1,5 @@
 //
-// vpn tunnel for i2p via SAM 3
-//
+// samtun.cc
 // copywrong you're mom 2015
 //
 #include <string>
@@ -23,9 +22,12 @@
 #include <thread>
 #include <memory>
 #include "address.hpp"
+#include "dht.hpp"
+
 extern "C" {
 #include "ifr6.h"
 }
+
 #define ASSERT_FD(fd) { if (fd == -1) { std::string msg(__FILE__); msg += ":" + std::to_string(__LINE__); perror(msg.c_str()); exit(1); } }
 
 #define CLOSE_IF_OPEN(fd) { if ( fd != -1 ) { close(fd); } }
@@ -65,13 +67,13 @@ namespace samtun {
   in_addr_t them_addr;
   // our tun address
   in_addr_t us_addr;
-
-  // our node's ipv6 address
-  in6_addr node_addr;
   
   // network mtu
   size_t mtu;
-  
+
+  // dht handler
+  DHT_t dht;
+
   // does our keyfile exist?
   bool has_keyfile() {
     std::fstream f;
@@ -140,7 +142,7 @@ namespace samtun {
     memset(&ifr6, 0, sizeof(ifr6));
     ifr6.ifr6_prefixlen = 8;
     ifr6.ifr6_ifindex = ifr.ifr_ifindex;
-    memcpy(&ifr6.ifr6_addr, &node_addr, sizeof(in6_addr));
+    memcpy(&ifr6.ifr6_addr, &dht.node_addr, sizeof(in6_addr));
     
     if (ioctl(sfd6, SIOCSIFADDR, &ifr6) < 0 ) {
       perror("SIOCSIFADDR6");
@@ -296,6 +298,7 @@ namespace samtun {
       exit(1);
     }
 
+    // set mtu
     mtu = 8 * 1024;
 
     // set command address
@@ -364,13 +367,17 @@ namespace samtun {
     line = sam_cmd_readline();
     our_dest = get_name_lookup_result(line);
 
-    // compute our node's ipv6 address
-    compute_address(our_dest, &node_addr);
+
+    // set the dht up
+    dht.Init(our_dest);
     
-    std::cout << "our ipv6 address is " << addr_tostring(node_addr);
+    // compute our node's ipv6 address
+    i2p_b32addr_t addr(our_dest);
+    
+    std::cout << "our ipv6 address is " << addr_tostring(dht.node_addr);
     std::cout << std::endl;
     
-    std::cout << "our destination is: " << our_dest;
+    std::cout << "our destination is: " << (std::string)addr;
     std::cout << std::endl;
     _ready = true;
   }
@@ -379,8 +386,12 @@ namespace samtun {
     return _ready;
   }
 
+  int writetun(void * buff, size_t bufflen) {
+    return write(tunfd, buff, bufflen);
+  }
+  
   // send a datagram to sam udp
-  ssize_t sam_sendto(std::string addr, char * buff, size_t bufflen) {
+  int sam_sendto(std::string addr, void * buff, size_t bufflen) {
     std::stringstream ss;
     ss << "3.0 " << samnick << " " << addr << "\n";
     std::string header = ss.str();
@@ -399,7 +410,7 @@ namespace samtun {
     delete send_buff;
     return res;
   }
-
+  
   // we got a sam datagram from addr 
   void got_sam_datagram(std::string addr, char * buff, size_t bufflen) {
     if (verbose) {
@@ -407,31 +418,44 @@ namespace samtun {
       std::cerr << std::endl;
     }
 
-    // if we don't already know this destination cache it
-    if (!cached_destination(addr)) {
-      save_endpoint(addr);
-    }
-    // get destination address
-    in6_addr dst;
-    memcpy(&dst, buff+28, 16);
+    // compute b32 address
+    i2p_b32addr_t fromaddr(addr); 
+
     
-    // is this packet for us?
-    if (!memcmp(&dst, &node_addr, 16)) {
-      // no it's not wtf?
-      // drop it
-      return;
+    // if we don't already know this destination put it in our routing table
+    if (!dht.KnownDest(fromaddr)) {
+      dht.Put(addr);
     }
 
-    // get source address
-    in6_addr src;
-    compute_address(addr, &src);
-    // put it into the packet
-    // if they spoof this will be an invalid packet
-    memcpy(buff+8, &src, 16);
-    
-    // write packet to the tun device;
-    write(tunfd, buff, bufflen);
-    
+    // check if this is a control packet
+    uint8_t version;
+    memcpy(&version, buff, 1);
+    // it's a dht packet
+    if ((version & dht_byte) == dht_byte) {
+      // handle dht packet
+      dht.HandleData(addr, buff, bufflen, sam_sendto);
+    } else {
+      // it's an ipv6 packet
+      
+      // get destination address
+      in6_addr dst;
+      memcpy(&dst, buff+28, 16);
+
+      // is this packet for us?
+      if (!memcmp(&dst, &dht.node_addr, 16)) {
+        // no it's not wtf?
+        // drop it
+        return;
+      }
+      
+      // get source address
+      in6_addr src = fromaddr;
+      // put it into the packet
+      memcpy(buff+8, &src, 16);
+      
+      // write packet to the tun device;
+      writetun(buff, bufflen);
+    }
   }
 
   // called when we got an ip packet from the user
@@ -447,18 +471,14 @@ namespace samtun {
     // get the remote destination for this packet's destination ip
     in6_addr dst;
     memcpy(&dst, buff+28, 16);
-    std::string dest = lookup_destination(dst);
-    // do we know it?
-    if (!dest.empty()) {
+    // do we know this address ?
+    if ( dht.KnownAddr(dst)) {
       // yes, send it to them
+      std::string dest = dht.GetDest(dst);
       sam_sendto(dest, buff, bufflen);
     } else {
-      // nope, we don't know who it's for. drop it.
-      if (verbose) {
-        std::cerr << "we don't know the address for ";
-        std::cerr << addr_tostring(dst);
-        std::cerr << std::endl;
-      }
+      // nope, we don't know who it's for. look it up.
+      dht.Find(dst, sam_sendto);
     } 
   }
 
@@ -487,8 +507,6 @@ namespace samtun {
   }
   
   void run() {
-    // restore our address cache
-    restore_cache();
     // open tun interface
     open_tun();
 
@@ -553,23 +571,9 @@ namespace samtun {
   }
 }
 
-bool exiting;
-
-void handle_sig(int sig) {
-  if (exiting) {
-    std::cout << "already exiting..." << std::endl;
-  } else {
-    exiting = true;
-    persist_cache();
-  }
-}
-
 int main(int argc, char * argv[]) {
   samtun::init();
   if( samtun::ready()) {
-    exiting = false;
-    signal(SIGINT, handle_sig);
-    signal(SIGTERM, handle_sig);
     samtun::run();
   }
 }

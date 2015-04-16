@@ -1,5 +1,5 @@
 //
-// samtun ipv4 address deriviation
+// address.cc
 // copywrong you're mom 2015
 //
 #include "address.hpp"
@@ -12,22 +12,8 @@
 #include <fstream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-void compute_address(std::string destination, in6_addr * addr)
-{
-  uint8_t * digest = new uint8_t[32];
-  size_t destination_unpack_len;
-  uint8_t * destination_unpack = base64_decode(destination, &destination_unpack_len);
-  sha256(destination_unpack, destination_unpack_len, digest);
-  memcpy(&addr->s6_addr, digest, 16);
-  addr->s6_addr[0] = 0x02;
-  delete digest;
-  delete destination_unpack;
-}
-
-
-std::unordered_map<std::string, std::string> cache;
-std::mutex cache_mutex;
+#include "sha2.h"
+#include "base64.hpp"
 
 std::string addr_tostring(in6_addr addr) {
   char addrbuff[INET6_ADDRSTRLEN];
@@ -35,71 +21,31 @@ std::string addr_tostring(in6_addr addr) {
   return std::string(addrbuff);
 }
 
-bool cached_destination(std::string dest) {
+i2p_b32addr_t::operator std::string() {
+  return base32_encode(m_data, sizeof(m_data)) + ".b32.i2p";
+}
 
+i2p_b32addr_t::operator in6_addr() {
   in6_addr addr;
-  compute_address(dest, &addr);
-  // obtain lock
-  std::lock_guard<std::mutex> lock(cache_mutex);
-  return cache.find(addr_tostring(addr)) != cache.end();
+  memcpy(&addr.s6_addr, m_data, 16);
+  addr.s6_addr[0] = 0x02;
+  return addr;
 }
 
-void save_endpoint(std::string dest) {
-  in6_addr addr;
-  compute_address(dest, &addr);
-  auto key = addr_tostring(addr);
-  // obtain lock
-  std::lock_guard<std::mutex> lock(cache_mutex);
-  cache[key] = dest;
+i2p_b32addr_t::operator uint8_t * () {
+  return m_data;
 }
 
-std::string lookup_destination(in6_addr addr) {
-  auto key = addr_tostring(addr);
-  
-  std::lock_guard<std::mutex> lock(cache_mutex);
-  if (cache.find(key) == cache.end()) {
-    return "";
-  }
-  return cache[key];
+bool i2p_b32addr_t::operator==(i2p_b32addr_t &other) {
+  return memcmp(other.m_data, m_data, sizeof(m_data));
 }
 
-void persist_cache() {
-  std::cout << "persiting cache" << std::endl;
-  // obtain lock
-  std::lock_guard<std::mutex> lock(cache_mutex);
-  std::ofstream f;
-  f.open("nodes.txt");
-  if (!f.is_open()) {
-    std::cerr << "cannot open nodes.txt";
-    std::cerr << std::endl;
-  }
-  for (auto key : cache) {
-    f << key.second << std::endl;
-  }
-  f.flush();
-  f.close();
-}
+i2p_b32addr_t::i2p_b32addr_t() { memset(m_data, 0, sizeof(m_data)); }
 
-void restore_cache() {
-  std::cout << "restore cache" << std::endl;
-  std::ifstream f;
-  f.open("nodes.txt");
-  if (!f.is_open()) {
-    // can't open cache
-    // whatever, just return
-    return;
-  }
-  
-  std::string dest;
-  do {
-    dest.clear();
-    std::getline(f, dest);
-    // strip out whitespaces
-    auto itr = dest.find(' ');
-    while(itr != std::string::npos ) {
-      dest.erase(itr);
-      itr = dest.find(' ');
-    }
-    save_endpoint(dest);
-  } while(!dest.empty());
+
+i2p_b32addr_t::i2p_b32addr_t(std::string destblob) {
+    size_t unpack_len;
+    uint8_t * unpack = base64_decode(destblob, &unpack_len);
+    sha256(unpack, unpack_len, m_data);
+    delete unpack;
 }

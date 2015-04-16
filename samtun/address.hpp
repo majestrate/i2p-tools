@@ -1,37 +1,38 @@
+//
+// address.hpp
+// copywrong you're mom 2015
+//
 #ifndef ADDRESS_HPP
 #define ADDRESS_HPP
 #include <string>
+#include <cstring>
 #include <netinet/in.h>
-//
-// samtun ipv4 address deriviation
-// copywrong you're mom 2015
-//
 
 
-// compute the ipv6 address for this destination blob
-// uses 0200::/8 address block (supposivly deprecated)
-// The next 15 bytes are bytes 1 to 16 from the sha256
-// of the unpacked base64 destination blob.
-void compute_address(std::string destination, in6_addr * addr);
+struct i2p_b32addr_t {
+  uint8_t m_data[32];
 
-// return true if we know this destination's ipv6 address
-bool cached_destination(std::string destination);
+  // empty address
+  i2p_b32addr_t();
+  
+  // computes the sha256 of this destination blob
+  i2p_b32addr_t(std::string destblob);
 
-// remember that this destination maps to a ipv6 address
-void save_endpoint(std::string destination);
+  // compute the ipv6 address for this destination hash
+  // uses 0200::/8 address block (supposivly deprecated)
+  // The next 15 bytes are bytes 1 to 16 of our has value
+  operator in6_addr();
 
-// check our local destination cache for a destination
-// mapped to this address
-// return empty string on fail
-std::string lookup_destination(in6_addr addr);
+  operator uint8_t * ();
+  
+  // .b32.i2p string representation
+  operator std::string();
+
+  bool operator ==(i2p_b32addr_t & other);
+  
+};
 
 // convert an ipv6 address to string
 std::string addr_tostring(in6_addr addr);
-
-// save the cache to disk
-void persist_cache();
-
-// restore the cache from disk
-void restore_cache();
 
 #endif

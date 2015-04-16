@@ -1,6 +1,6 @@
 FLAGS=-Wall -std=c++11
-SRC=base64.cc samtun.cc sha2.c address.cc
-OBJS=base64.o samtun.o sha2.o address.o
+SRC=base64.cc samtun.cc sha2.c address.cc dht.cc
+OBJS=base64.o samtun.o sha2.o address.o dht.o
 
 all: samtun.bin
 
