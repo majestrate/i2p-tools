@@ -3,14 +3,14 @@
 #include <iostream>
 #include <fstream>
 
-std::string dht_filename("nodes.txt");
+#define DHT_FILENAME "nodes.txt"
 
 DHT_t::DHT_t() {
-  Restore(dht_filename);
+  Restore(DHT_FILENAME);
 }
 
 DHT_t::~DHT_t() {
-  Persist(dht_filename);
+  Persist(DHT_FILENAME);
 }
 
 void DHT_t::Init(std::string & our_dest) {
@@ -56,8 +56,8 @@ void DHT_t::Persist(std::string fname) {
   // for all nodes write their destination blobs with a newline
   for ( auto & kbucket : routing_table ) {
     for (auto & key : kbucket) {
-      if (key.size() > 0) {
-        f << key << std::endl;
+      if (key.second.size() > 0) {
+        f << key.second << std::endl;
       }
     }
 
@@ -120,7 +120,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
   DHT_Request_t closest;
   // distance between remote and local ipv6 addresses
   int distance = 0;
-  
+  std::cerr << (int)dht_command << std::endl;
   switch(dht_command) {
 
   case dht_req_get: // someone asks us to resolve an address
@@ -135,7 +135,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
       // get the closest node and the distance between them and us
       closest = getClosestForAddr(remote_addr);
       // compare the closest node to us
-      distance = memcmp(closest.first.data(), &node_addr.s6_addr, closest.first.size());
+      distance = memcmp(closest.first.data(), node_addr.s6_addr, closest.first.size());
       // can we get closer ?
       if (distance) {
         // yes
@@ -159,7 +159,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
       break;
     }
     // is it really them ?
-    if (memcmp(&remote_addr.s6_addr, target.data(), 16) == 0) {
+    if (memcmp(remote_addr.s6_addr, target.data(), 16) == 0) {
       // yes
       // the operation is done
       local_pending.erase(operation);
@@ -178,28 +178,40 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
   }
 }
 
-bool DHT_t::KnownDest(i2p_b32addr_t & destaddr) {
+bool DHT_t::KnownDest(std::string & destblob) {
 
+  i2p_b32addr_t destaddr(destblob);
   // make ipv6 address for this destblob
   in6_addr addr = destaddr;
   // get closest known address for the address
   auto req = getClosestForAddr(addr);
-  i2p_b32addr_t closest(req.second);  
   // the closest destination is the same if it's known
-  return closest == destaddr;
+  return req.second == destblob;
 }
 
 bool DHT_t::KnownAddr(in6_addr & addr) {
-  // get closest known address for the address
-  auto req = getClosestForAddr(addr);
-  // the closest destination is the same if it's known
-  return memcmp(req.first.data(), &addr.s6_addr, sizeof(addr.s6_addr)) == 0;
+  DHT_Key_t k1, k2;
+  memcpy(k1.data(), node_addr.s6_addr, k1.size());
+  memcpy(k2.data(), addr.s6_addr, k2.size());
+
+  // compute distance between them and me
+  DHT_KeyDistance_t dist = ComputeKademlia(k1, k2);
+  // count bits of the distance to get the index
+  uint16_t bits = CountDistanceBits(dist);
+  
+  auto idx = bits / dht_kbucket_count;
+  // this will hang if the routing table is empty
+  // make sure that never happens k?
+  while(routing_table[idx].empty()) {
+    idx = (idx + 1) % dht_kbucket_count;
+  }
+  return KBucketContainsKey(routing_table[idx], k2);
 }
 
 std::string DHT_t::GetDest(in6_addr & addr) {
   auto req = getClosestForAddr(addr);
   // do we know it?
-  if (memcmp(req.first.data(), &addr.s6_addr, req.first.size())) {
+  if (memcmp(req.first.data(), addr.s6_addr, req.first.size())) {
     // no, wtf?
     return "";
   } else {
@@ -214,12 +226,13 @@ void DHT_t::Find(in6_addr & addr, WriteFunction write) {
   char buff[bufflen];
   buff[0] = dht_byte;
   buff[1] = dht_req_get;
-  memcpy(buff+2, &addr.s6_addr, sizeof(addr.s6_addr));
+  memcpy(buff+2, addr.s6_addr, sizeof(addr.s6_addr));
 
   // find closest peer for this address
   auto req = getClosestForAddr(addr);
+  std::cerr << "asking "<< addr_tostring(req.first) << std::endl;
   // is this node farther away ?
-  if (memcmp(&node_addr.s6_addr, req.first.data(), req.first.size())) {
+  if (memcmp(node_addr.s6_addr, req.first.data(), req.first.size())) {
     // yup
     // send it out
     write(req.second, buff, bufflen);
@@ -247,6 +260,10 @@ DHT_Pending_t DHT_t::getLocalPending(DHT_Key_t & key) {
 }
 
 void DHT_t::Put(std::string & destblob) {
+  if ( KnownDest(destblob) ) {
+    std::cerr << "cannot put what is already there" << std::endl;
+    return;
+  }
   in6_addr addr = i2p_b32addr_t(destblob);
   auto kbucket = getKBucketForAddr(addr);
   // put it into the routing table
@@ -255,8 +272,8 @@ void DHT_t::Put(std::string & destblob) {
 
 DHT_KBucket_t & DHT_t::getKBucketForAddr(in6_addr & addr) {
   DHT_Key_t k1, k2;
-  memcpy(k1.data(), &node_addr.s6_addr, k1.size());
-  memcpy(k2.data(), &addr.s6_addr, k2.size());
+  memcpy(k1.data(), node_addr.s6_addr, k1.size());
+  memcpy(k2.data(), addr.s6_addr, k2.size());
 
   // compute distance between them and me
   DHT_KeyDistance_t dist = ComputeKademlia(k1, k2);
@@ -268,8 +285,8 @@ DHT_KBucket_t & DHT_t::getKBucketForAddr(in6_addr & addr) {
 
 DHT_Request_t DHT_t::getClosestForAddr(in6_addr & addr) {
   DHT_Key_t k1, k2;
-  memcpy(k1.data(), &node_addr.s6_addr, k1.size());
-  memcpy(k2.data(), &addr.s6_addr, k2.size());
+  memcpy(k1.data(), node_addr.s6_addr, k1.size());
+  memcpy(k2.data(), addr.s6_addr, k2.size());
 
   // compute distance between them and me
   DHT_KeyDistance_t dist = ComputeKademlia(k1, k2);
@@ -309,8 +326,21 @@ uint16_t CountDistanceBits(DHT_KeyDistance_t & dist) {
   return bits;
 }
 
+bool KBucketContainsKey(DHT_KBucket_t & bucket, DHT_Key_t & key) {
+  for ( auto & val : bucket ) {
+    if ( memcmp(val.first.data(), key.data(), 16) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void KBucketPut(DHT_KBucket_t & bucket, DHT_Val_t & val) {
-  bucket.push_back(val);
+  i2p_b32addr_t addr(val);
+  DHT_Key_t k;
+  memcpy(k.data(), addr, 16);
+  DHT_Request_t req = {k, val};
+  bucket.push_back(req);
 }
 
 DHT_Val_t KBucketGetClosest(DHT_KBucket_t & bucket, DHT_Key_t &k) {
@@ -319,10 +349,9 @@ DHT_Val_t KBucketGetClosest(DHT_KBucket_t & bucket, DHT_Key_t &k) {
   uint16_t min_dist = 0xffff;
   DHT_Key_t current;
   DHT_KeyDistance_t dist;
-  for( DHT_Val_t & val : bucket ) {
-    i2p_b32addr_t addr(val);
-    memcpy(current.data(), addr, current.size());
-    dist = ComputeKademlia(k, current);
+  for( auto & item : bucket ) {
+    auto addr = item.first;
+    dist = ComputeKademlia(k, addr);
     uint16_t bits = CountDistanceBits(dist);
     if (bits < min_dist) {
       min_dist = bits;
@@ -330,5 +359,5 @@ DHT_Val_t KBucketGetClosest(DHT_KBucket_t & bucket, DHT_Key_t &k) {
     }
     ++idx;
   }
-  return bucket[min_idx];
+  return bucket[min_idx].second;
 }

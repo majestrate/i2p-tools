@@ -377,7 +377,7 @@ namespace samtun {
     std::cout << "our ipv6 address is " << addr_tostring(dht.node_addr);
     std::cout << std::endl;
     
-    std::cout << "our destination is: " << (std::string)addr;
+    std::cout << "our destination is: " << our_dest;
     std::cout << std::endl;
     _ready = true;
   }
@@ -402,7 +402,7 @@ namespace samtun {
     memcpy(send_buff+header.size(), buff, bufflen);
     
     if (verbose) {
-      std::cerr << "sam_sendto " << std::to_string(sendlen);
+      std::cerr << "sam_sendto " << std::to_string(sendlen) << " " << addr;
       std::cerr << std::endl;
     }
     
@@ -423,16 +423,21 @@ namespace samtun {
 
     
     // if we don't already know this destination put it in our routing table
-    if (!dht.KnownDest(fromaddr)) {
+    if (!dht.KnownDest(addr)) {
+      if (verbose) {
+        std::cerr << "put " << addr << " into routing table" << std::endl;
+      }
       dht.Put(addr);
     }
 
     // check if this is a control packet
     uint8_t version;
     memcpy(&version, buff, 1);
-    // it's a dht packet
-    if ((version & dht_byte) == dht_byte) {
+    // is it a dht packet?
+    if (!version) {
+      // yes
       // handle dht packet
+      std::cerr << "handle dht packet" << std::endl;
       dht.HandleData(addr, buff, bufflen, sam_sendto);
     } else {
       // it's an ipv6 packet
@@ -442,7 +447,7 @@ namespace samtun {
       memcpy(&dst, buff+28, 16);
 
       // is this packet for us?
-      if (!memcmp(&dst, &dht.node_addr, 16)) {
+      if (!bcmp(&dst, &dht.node_addr, 16)) {
         // no it's not wtf?
         // drop it
         return;
@@ -451,8 +456,8 @@ namespace samtun {
       // get source address
       in6_addr src = fromaddr;
       // put it into the packet
-      memcpy(buff+8, &src, 16);
-      
+      memcpy(buff+10, &src, 16);
+      std::cerr << "write tun " << bufflen << std::endl;
       // write packet to the tun device;
       writetun(buff, bufflen);
     }
@@ -460,12 +465,11 @@ namespace samtun {
 
   // called when we got an ip packet from the user
   void got_ip_packet(char * buff, size_t bufflen) {
+    std::cerr << "got ip packet" << std::endl;
     if(bufflen <= 36) {
-      if (verbose) {
         std::cerr << "packet too small " << std::to_string(bufflen);
         std::cerr << std::endl;
-      }
-      // packet too small
+        // packet too small
       return;
     }
     // get the remote destination for this packet's destination ip
@@ -474,20 +478,20 @@ namespace samtun {
     // do we know this address ?
     if ( dht.KnownAddr(dst)) {
       // yes, send it to them
+      std::cerr << "sending to " << addr_tostring(dst) << std::endl;
       std::string dest = dht.GetDest(dst);
       sam_sendto(dest, buff, bufflen);
     } else {
       // nope, we don't know who it's for. look it up.
+      
+      std::cerr << "finding " << addr_tostring(dst) << "..." << std::endl;
+      
       dht.Find(dst, sam_sendto);
     } 
   }
 
   // called when we got a datagram from the i2p router
   void got_dgram(char * buff, size_t bufflen) {
-    if (verbose) {
-      std::cerr << "got dgram " << std::to_string(bufflen);
-      std::cerr << std::endl;
-    }
     // find the newline
     char * payload = buff;
     while(*payload != '\n') { payload++; }

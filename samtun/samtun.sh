@@ -8,5 +8,5 @@ export SAM_RECV_PORT=11100
 export SAM_KEYFILE=privkey.txt
 export SAM_NICK=samtun
 export SAM_TUN_IFACE=i2p0
-export SAM_VERBOSE=nah
-$(dirname $0)/samtun.bin
+export SAM_VERBOSE=yes
+gdb samtun.bin

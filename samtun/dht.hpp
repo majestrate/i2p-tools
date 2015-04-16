@@ -9,7 +9,7 @@
 #include <cstdint>
 #include "address.hpp"
 
-const char dht_byte = 0x5f;
+const char dht_byte = 0x00;
 
 constexpr size_t dht_kbucket_count = 16;
 
@@ -17,19 +17,42 @@ constexpr size_t dht_kbucket_count = 16;
 typedef int (*WriteFunction)(std::string, void*, size_t);
 
 typedef std::string DHT_Val_t; // i2p destblob
-typedef std::array<uint8_t, 16> DHT_Key_t; // ipv6 address
+
+// ipv6 address
+struct DHT_Key_t {
+  in6_addr addr;
+  uint8_t * data() {
+    return addr.s6_addr;
+  }
+  size_t size() {
+    return sizeof(addr.s6_addr);
+  }
+
+  uint8_t operator[](size_t idx) {
+    return addr.s6_addr[idx];
+  }
+
+  bool operator==(DHT_Key_t & other) {
+    return memcmp(addr.s6_addr, other.addr.s6_addr, sizeof(addr.s6_addr)) == 0;
+  }
+  operator in6_addr () {
+    return addr;
+  }
+  
+}; 
 typedef std::array<uint8_t, 16> DHT_KeyDistance_t; // distance between keys
 
-typedef std::vector<DHT_Val_t> DHT_KBucket_t;
+typedef std::pair<DHT_Key_t, DHT_Val_t> DHT_Request_t;
+
+typedef std::vector<DHT_Request_t> DHT_KBucket_t;
 
 void KBucketPut(DHT_KBucket_t & bucket, DHT_Val_t & val);
 bool KBucketNonEmpty(DHT_KBucket_t & bucket);
 DHT_Val_t KBucketGetClosest(DHT_KBucket_t & bucket, DHT_Key_t & key);
+bool KBucketContainsKey(DHT_KBucket_t & bucket, DHT_Key_t & key);
 
 
 typedef std::array<DHT_KBucket_t, dht_kbucket_count> DHT_RoutingTable_t;
-
-typedef std::pair<DHT_Key_t, DHT_Val_t> DHT_Request_t;
 
 typedef std::vector<DHT_Request_t> DHT_PendingTable_t;
 
@@ -68,7 +91,7 @@ struct DHT_t {
   void Persist(std::string fname);
 
   // do we know the info for this peer?
-  bool KnownDest(i2p_b32addr_t & addr);
+  bool KnownDest(std::string & destblob);
 
   // do we know the destination for this address?
   bool KnownAddr(in6_addr & addr);
