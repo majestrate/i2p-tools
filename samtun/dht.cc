@@ -6,7 +6,6 @@
 #define DHT_FILENAME "nodes.txt"
 
 DHT_t::DHT_t() {
-  Restore(DHT_FILENAME);
 }
 
 DHT_t::~DHT_t() {
@@ -34,6 +33,7 @@ void DHT_t::Restore(std::string fname) {
   do {
     dest.clear();
     std::getline(f, dest);
+    
     // strip out whitespaces
     auto itr = dest.find(' ');
     while(itr != std::string::npos ) {

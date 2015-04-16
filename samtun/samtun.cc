@@ -371,6 +371,9 @@ namespace samtun {
     // set the dht up
     dht.Init(our_dest);
     
+    // restore our nodes
+    dht.Restore("nodes.txt");
+    
     // compute our node's ipv6 address
     i2p_b32addr_t addr(our_dest);
     
