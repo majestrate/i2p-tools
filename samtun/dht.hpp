@@ -22,35 +22,46 @@ typedef std::string DHT_Val_t; // i2p destblob
 // ipv6 address
 class DHT_Key_t {
 private:
-  in6_addr addr;
+  uint8_t addr[16];
 public:
   uint8_t * data() const {
-    return (uint8_t*)addr.s6_addr;
+    return (uint8_t*)addr;
   }
 
-  DHT_Key_t() { memset(addr.s6_addr, 0, sizeof(addr.s6_addr)); }
+  DHT_Key_t() { memset(addr, 0, 16); }
   
   operator std::string () {
-    return addr_tostring(addr);
+    in6_addr a;
+    memcpy(a.s6_addr, addr, 16);
+    a.s6_addr[0] = 2;
+    return addr_tostring(a);
   }
 
   operator const std::string () const {
-    return addr_tostring(addr);
+    in6_addr a;
+    memcpy(a.s6_addr, addr, 16);
+    a.s6_addr[0] = 2;
+    return addr_tostring(a);
   }
   
   size_t size() const {
-    return sizeof(addr.s6_addr);
+    return 16;
   }
 
   uint8_t operator[](size_t idx) {
-    return addr.s6_addr[idx];
+    if (idx == 0) return 2;
+    return addr[idx];
   }
 
   bool operator==(const DHT_Key_t & other) const {
-    return memcmp(addr.s6_addr, other.addr.s6_addr, sizeof(addr.s6_addr)) == 0;
+    // ignore first byte
+    return memcmp(addr+1, other.addr+1, 15) == 0;
   }
   operator in6_addr () {
-    return addr;
+    in6_addr a;
+    memcpy(a.s6_addr, addr, 16);
+    a.s6_addr[0] = 2;
+    return a;
   }  
 };
 

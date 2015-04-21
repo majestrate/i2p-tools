@@ -1,4 +1,4 @@
-FLAGS=-Wall -std=c++11 -g -O1
+FLAGS=-Wall -std=c++11 -static
 SRC=base64.cc sha2.c address.cc dht.cc
 OBJS=base64.o sha2.o address.o dht.o
 CXX=g++

@@ -436,9 +436,9 @@ namespace samtun {
 
     // check if this is a control packet
     uint8_t version;
-    memcpy(&version, buff, 1);
+    memcpy(&version, buff+2, 1);
     // is it a dht packet?
-    if (!version) {
+    if (version == dht_byte) {
       // yes
       // handle dht packet
       std::cerr << "handle dht packet" << std::endl;
@@ -451,7 +451,7 @@ namespace samtun {
       memcpy(&dst, buff+28, 16);
 
       // is this packet for us?
-      if (!bcmp(&dst, &dht.node_addr, 16)) {
+      if (memcmp(&dst, &dht.node_addr, 16)) {
         // no it's not wtf?
         // drop it
         return;
@@ -460,7 +460,7 @@ namespace samtun {
       // get source address
       in6_addr src = fromaddr;
       // put it into the packet
-      memcpy(buff+10, &src, 16);
+      memcpy(buff+12, &src, 16);
       std::cerr << "write tun " << bufflen << std::endl;
       // write packet to the tun device;
       writetun(buff, bufflen);

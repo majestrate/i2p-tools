@@ -131,7 +131,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
   DHT_Key_t closest_key;
   DHT_Val_t closest_dest;
   if (verbose) {
-    std::cerr << (int)dht_command << std::endl;
+    std::cerr << (int) dht_command << std::endl;
   }
   switch(dht_command) {
 
@@ -140,11 +140,8 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
     // do we know the target address ?
     if ( KnownAddr(target_addr) ) {
       // yes we know them
-      // tell requester that this was accepted
-      buff[1] = dht_repl_accept;
-      write(fromaddr, buff, bufflen);
       // are we the target?
-      if ( memcmp(target_addr.s6_addr, node_addr.s6_addr, sizeof(target_addr.s6_addr)) == 0) {
+      if ( memcmp(target_addr.s6_addr, node_addr.s6_addr, 16) == 0) {
         // ya we are the target
         // tell reply_to destination about us
         buff[1] = dht_repl_found;
@@ -154,7 +151,11 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
         // forward the request to the peer that is the target
         buff[1] = dht_req_get;
         std::string dest = GetDest(target_addr);
+        remote_pending.push_back({dest, req.second});
         write(dest, buff, bufflen);
+        // tell requester that this operation was accepted
+        buff[1] = dht_repl_accept;
+        write(fromaddr, buff, bufflen);
       }
     } else {
       // no we don't know them
@@ -181,7 +182,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
         write(fromaddr, buff, bufflen);
         // relay this request to the closer node
         buff[1] = dht_req_get;
-        write(closest.second, buff, bufflen);  
+        write(closest.second, buff, bufflen);
       }
     }
     break;
@@ -232,6 +233,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
       // ask them instead
       buff[1] = dht_req_get;
       write(closest_dest, buff, bufflen);
+      remote_pending.push_back({fromaddr, req.second});
     } else {
       // nope we don't have any closer peers
       // can't do shit so complain
@@ -337,7 +339,7 @@ bool DHT_t::KnownAddr(in6_addr & addr) {
 std::string DHT_t::GetDest(in6_addr & addr) {
   auto req = getClosestForAddr(addr);
   // do we know it?
-  if (memcmp(req.first.data(), addr.s6_addr, req.first.size())) {
+  if (memcmp(req.first.data()+1, addr.s6_addr+1, 15)) {
     // no, wtf?
     throw std::logic_error("DHT::GetDest() failed");
   } else {
@@ -378,13 +380,14 @@ void DHT_t::Find(in6_addr & addr, WriteFunction write) {
   if (verbose) {
     std::cerr << "asking "<< addr_tostring(req.first) << std::endl;
   }
-  // is this node farther away ?
-  if (memcmp(node_addr.s6_addr, req.first.data(), req.first.size())) {
-    // yup
-    // send it out
-    write(req.second, buff, bufflen);
-  } else {} // nope? wtf?! drop it.
-  
+  if (req.first[0] == 0x02) {
+    // is this node farther away ?
+    if (memcmp(node_addr.s6_addr, req.first.data(), req.first.size())) {
+      // yup
+      // send it out
+      write(req.second, buff, bufflen);
+    } else {} // nope? wtf?! drop it.
+  }
 }
 
 DHT_RequestHistory_t * DHT_t::getRequestHistoryForAddr(DHT_Key_t & k) {
@@ -579,7 +582,7 @@ uint16_t CountDistanceBits(DHT_KeyDistance_t & dist) {
 
 bool KBucketContainsKey(DHT_KBucket_t * bucket, DHT_Key_t & key) {
   for ( auto & val : *bucket ) {
-    if ( memcmp(val.first.data(), key.data(), 16) == 0) {
+    if ( key == val.first ) {
       return true;
     }
   }
