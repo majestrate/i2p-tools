@@ -9,4 +9,5 @@ export SAM_KEYFILE=privkey.txt
 export SAM_NICK=samtun
 export SAM_TUN_IFACE=i2p0
 export SAM_VERBOSE=yes
+#gdb ./samtun.bin
 ./samtun.bin

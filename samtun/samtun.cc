@@ -237,6 +237,7 @@ namespace samtun {
       std::cerr << "verbose output on" << std::endl;
       verbose = true;
     }
+    dht.verbose = verbose;
     samnick = std::getenv("SAM_NICK");
     std::string sam_cmd_host = std::getenv("SAM_CMD_HOST");
     std::string sam_cmd_port = std::getenv("SAM_CMD_PORT");
@@ -481,16 +482,20 @@ namespace samtun {
     // do we know this address ?
     if ( dht.KnownAddr(dst)) {
       // yes, send it to them
-      std::cerr << "sending to " << addr_tostring(dst) << std::endl;
+      if (verbose) {
+        std::cerr << "sending to " << addr_tostring(dst) << std::endl;
+      }
       std::string dest = dht.GetDest(dst);
       sam_sendto(dest, buff, bufflen);
-    } else {
+    } else if(dst.s6_addr[0] == 0x02) {
       // nope, we don't know who it's for. look it up.
-      
-      std::cerr << "finding " << addr_tostring(dst) << "..." << std::endl;
-      
+      if (verbose) {
+        std::cerr << "finding " << addr_tostring(dst) << "..." << std::endl;
+      }
       dht.Find(dst, sam_sendto);
-    } 
+    } else {
+      // drop it, it's not for i2p
+    }
   }
 
   // called when we got a datagram from the i2p router
