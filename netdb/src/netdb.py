@@ -139,7 +139,7 @@ class Entry:
     def _read_time(fd):
         d = Entry._read(fd, 8)
         if d:
-            li = struct.unpack('!Q', d)
+            li = struct.unpack('!Q', d)[0]
             return li
 
     @staticmethod
