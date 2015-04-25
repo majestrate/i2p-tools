@@ -241,13 +241,20 @@ class Entry:
         val += 'published={} '.format(self.published)
         val += 'signature={}'.format(b64encode(self.signature))
         return val
-        
+
     def dict(self):
         """
         return dictionary in old format
         """
-        val = dict()
-        return val
+        return dict({
+           'pubkey':b64encode(self.pubkey),
+            'signkey':b64encode(self.signkey),
+            'options':self.options,
+            'addrs':self.addrs,
+            'cert':b64encode(self.cert),
+            'published':self.published,
+            'signature':b64encode(self.signature)
+            })
 
 def inspect(hook=None,netdb_dir=os.path.join(os.environ['HOME'],'.i2p','netDb')):
     """
