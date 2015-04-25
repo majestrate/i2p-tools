@@ -436,7 +436,7 @@ namespace samtun {
 
     // check if this is a control packet
     uint8_t version;
-    memcpy(&version, buff+2, 1);
+    memcpy(&version, buff, 1);
     // is it a dht packet?
     if (version == dht_byte) {
       // yes
@@ -448,8 +448,9 @@ namespace samtun {
       
       // get destination address
       in6_addr dst;
-      memcpy(&dst, buff+28, 16);
-
+      memcpy(dst.s6_addr, buff+28, 16);
+      std::cerr << addr_tostring(dst);
+      std::cerr << std::endl;
       // is this packet for us?
       if (memcmp(&dst, &dht.node_addr, 16)) {
         // no it's not wtf?
@@ -460,7 +461,7 @@ namespace samtun {
       // get source address
       in6_addr src = fromaddr;
       // put it into the packet
-      memcpy(buff+12, &src, 16);
+      memcpy(buff+12, src.s6_addr, 16);
       std::cerr << "write tun " << bufflen << std::endl;
       // write packet to the tun device;
       writetun(buff, bufflen);
@@ -486,7 +487,7 @@ namespace samtun {
         std::cerr << "sending to " << addr_tostring(dst) << std::endl;
       }
       std::string dest = dht.GetDest(dst);
-      sam_sendto(dest, buff, bufflen);
+      sam_sendto(dest, buff+2, bufflen-2);
     } else if(dst.s6_addr[0] == 0x02) {
       // nope, we don't know who it's for. look it up.
       if (verbose) {
@@ -502,18 +503,15 @@ namespace samtun {
   void got_dgram(char * buff, size_t bufflen) {
     // find the newline
     char * payload = buff;
-    while(*payload != '\n') { payload++; }
+    while(*payload++ != '\n') {}
 
-    // replace the newline with a null character
-    // this terminates the string right there so we can...
-    *payload = 0;
-    // ... extract the source destination
-    std::string from_dest(buff);
+    // extract the source destination
+    std::string from_dest(buff, payload-1);
 
     // payload will point to the payload of the datagram
     ++payload;
     // adjust the length to fit the payload
-    bufflen -= from_dest.size() + 1;
+    bufflen -= from_dest.size() + 2;
     // we got a datagram from the i2p router, bonzai!!
     got_sam_datagram(from_dest, payload, bufflen);
   }

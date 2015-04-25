@@ -5,9 +5,12 @@
 ## MIT Liecense 2014
 ##
 import os,sys,struct,time,hashlib,fnmatch,io
+import base64
 import logging
 
-def sha256(data,raw=False):
+b64encode = lambda x : base64.b64encode(x, '~-')
+
+def sha256(data,raw=True):
     """
     compute sha256 of data
     """
@@ -43,8 +46,17 @@ class Address:
     """
     netdb address
     """
+    cost = None
+    transport = None
+    options = None
+    expire = None
 
-
+    def valid(self):
+        return None not in (self.cost, self.transport, self.options, self.expire)
+    
+    def __repr__(self):
+        return 'Address: transport={} cost={} expire={} options={}'.format(self.transport, self.cost, self.expire, self.options)
+    
 class Entry:
     """
     netdb entry
@@ -57,31 +69,41 @@ class Entry:
     @staticmethod
     def _read_short(fd):
         Entry._log.debug('read_short')
-        return struct.unpack('!H',fd.read(2))[0]
+        d = Entry._read(fd, 2)
+        if d:
+            return struct.unpack('!H',d)[0]
 
     @staticmethod
     def _read_mapping(fd):
         Entry._log.debug('read_mapping')
         mapping = dict()
         tsize = Entry._read_short(fd)
+        if tsize is None:
+            return
         data = Entry._read(fd, tsize)
+        if data is None:
+            return
         sfd = io.BytesIO(data)
         ind = 0
         while ind < tsize:
             Entry._log.debug(ind)
             key = Entry._read_string(sfd)
-            Entry._log.debug([key])
+            if key is None:
+                return
+            Entry._log.debug(['key', key])
     
             ind += len(key) + 2
             Entry._read_byte(sfd)
             val = Entry._read_string(sfd)
-            Entry._log.debug([val])
+            if val is None:
+                return
+            Entry._log.debug(['val',val])
 
             ind += len(val) + 2
             Entry._read_byte(sfd)
     
-            key = key[:-1]
-            val = val[:-1]
+            #key = key[:-1]
+            #val = val[:-1]
             if key in mapping:
                 v = mapping[key]
                 if isinstance(v,list):
@@ -94,23 +116,31 @@ class Entry:
 
     @staticmethod
     def _read(fd, amount):
-        Entry._log.debug('read %d bytes' % amount)
-        return fd.read(amount)
+        dat = fd.read(amount)
+        Entry._log.debug('read %d of %d bytes' % (len(dat), amount))
+        if len(dat) == amount:
+            return dat
+        
 
     @staticmethod 
     def _read_byte(fd):
-        return struct.unpack('!B', Entry._read(fd,1))[0]
+        b = Entry._read(fd,1)
+        if b:
+            return struct.unpack('!B', b)[0]
     
     @staticmethod
     def _read_string(fd):
         Entry._log.debug('read_string')
         slen = Entry._read_byte(fd)
-        return Entry._read(fd, slen)
+        if slen:
+            return Entry._read(fd, slen)
 
     @staticmethod
     def _read_time(fd):
-        li = struct.unpack('!Q', fd.read(8))
-        return li
+        d = Entry._read(fd, 8)
+        if d:
+            li = struct.unpack('!Q', d)
+            return li
 
     @staticmethod
     def _read_addr(fd):
@@ -123,7 +153,8 @@ class Entry:
         addr.expire = Entry._read_time(fd)
         addr.transport = Entry._read_string(fd)
         addr.options = Entry._read_mapping(fd)
-
+        if addr.valid():
+            return addr
 
 
     def __init__(self, filename):
@@ -140,6 +171,7 @@ class Entry:
         self.peer_size = None
         self.valid = False
         with open(filename, 'rb') as fr:
+            self._log.debug('load from file {}'.format(filename))
             self._load(fr)
             #self.routerHash = 
             
@@ -148,6 +180,8 @@ class Entry:
         load from file descriptor
         """
         data = self._read(fd, 387)
+        if data is None:
+            return
         ind = 0
         # public key
         self.pubkey = sha256(data[ind:ind+self._pubkey_size])
@@ -162,34 +196,58 @@ class Entry:
 
         # date published
         self.published  = self._read_time(fd)
-        
+        if self.published is None:
+            return
         # reachable addresses
         self.addrs = list()
         addrlen = self._read_byte(fd)
+        if addrlen is None:
+            return
         for n in range(addrlen):
             addr = self._read_addr(fd)
+            if addr is None:
+                return
             self.addrs.append(addr)
  
         # peer size
         self.peer_size = self._read_byte(fd)
+        if self.peer_size is None:
+            return
         
         # other options
         self.options = self._read_mapping(fd)
+        if self.options is None:
+            return
         # signature
         self.signature = sha256(self._read(fd, 40))
-
+        if self.signature is None:
+            return
+        self.valid = True
+        
     def verify(self):
         """
         verify router identity
         """
         #TODO: verify 
-        self.valid = True
 
+    def __repr__(self):
+        val = str()
+        val += 'NetDB Entry '
+        val += 'pubkey={} '.format(b64encode(self.pubkey))
+        val += 'signkey={} '.format(b64encode(self.signkey))
+        val += 'options={} '.format(self.options)
+        val += 'addrs={} '.format(self.addrs)
+        val += 'cert={} '.format(b64encode(self.cert))
+        val += 'published={} '.format(self.published)
+        val += 'signature={}'.format(b64encode(self.signature))
+        return val
+        
     def dict(self):
         """
         return dictionary in old format
         """
-        #TODO: implement old format
+        val = dict()
+        return val
 
 def inspect(hook=None,netdb_dir=os.path.join(os.environ['HOME'],'.i2p','netDb')):
     """
@@ -212,7 +270,3 @@ def inspect(hook=None,netdb_dir=os.path.join(os.environ['HOME'],'.i2p','netDb'))
         insp.inspect = hook 
     insp.run(netdb_dir)
 
-
-#if __name__ == '__main__':
-#    logging.basicConfig(level=logging.INFO)
-#    inspect()

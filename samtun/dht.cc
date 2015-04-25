@@ -131,7 +131,7 @@ void DHT_t::HandleData(std::string & fromaddr, char * buff, size_t bufflen, Writ
   DHT_Key_t closest_key;
   DHT_Val_t closest_dest;
   if (verbose) {
-    std::cerr << (int) dht_command << std::endl;
+    std::cerr << dht_command << std::endl;
   }
   switch(dht_command) {
 
