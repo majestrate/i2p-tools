@@ -5,6 +5,7 @@
 ## MIT Liecense 2014
 ##
 import os,sys,struct,time,hashlib,fnmatch,io
+from geoip import geolite2
 import base64
 import logging
 
@@ -50,12 +51,14 @@ class Address:
     transport = None
     options = None
     expire = None
+    location = None
 
     def valid(self):
         return None not in (self.cost, self.transport, self.options, self.expire)
     
     def __repr__(self):
-        return 'Address: transport={} cost={} expire={} options={}'.format(self.transport, self.cost, self.expire, self.options)
+        return 'Address: transport={} cost={} expire={} options={} location={}' \
+            .format(self.transport, self.cost, self.expire, self.options, self.location)
     
 class Entry:
     """
@@ -154,8 +157,13 @@ class Entry:
         addr.transport = Entry._read_string(fd)
         addr.options = Entry._read_mapping(fd)
         if addr.valid():
+			# This is a try because sometimes hostnames show up.
+			# TODO: Make it allow host names.
+            try:
+                addr.location = geolite2.lookup(addr.options.get('host', None))
+            except:
+                addr.location = None
             return addr
-
 
     def __init__(self, filename):
         """
@@ -183,6 +191,7 @@ class Entry:
         if data is None:
             return
         ind = 0
+
         # public key
         self.pubkey = sha256(data[ind:ind+self._pubkey_size])
         ind += self._pubkey_size
@@ -198,6 +207,7 @@ class Entry:
         self.published  = self._read_time(fd)
         if self.published is None:
             return
+
         # reachable addresses
         self.addrs = list()
         addrlen = self._read_byte(fd)
@@ -218,6 +228,7 @@ class Entry:
         self.options = self._read_mapping(fd)
         if self.options is None:
             return
+
         # signature
         self.signature = sha256(self._read(fd, 40))
         if self.signature is None:
