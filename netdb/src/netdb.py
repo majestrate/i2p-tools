@@ -185,10 +185,13 @@ class Entry:
         self.signature = None
         self.peer_size = None
         self.valid = False
-        with open(filename, 'rb') as fr:
-            self._log.debug('load from file {}'.format(filename))
-            self._load(fr)
-            #self.routerHash = 
+        try:
+            with open(filename, 'rb') as fr:
+                self._log.debug('load from file {}'.format(filename))
+                self._load(fr)
+                #self.routerHash = 
+        except (IOError, OSError) as e:
+                self._log.debug('load from file {} failed'.format(filename))
             
     def _load(self, fd):
         """
@@ -198,7 +201,7 @@ class Entry:
 
         # router identity http://i2p-projekt.i2p/en/docs/spec/common-structures#struct_RouterIdentity
         # Do not assume that these are always 387 bytes!
-		# There are 387 bytes plus the certificate length specified at bytes 385-386, which may be non-zero.
+        # There are 387 bytes plus the certificate length specified at bytes 385-386, which may be non-zero.
 
         # Subtract because read the Certificate on it's own.
         data = self._read(fd, 387-self._min_cert_size)
@@ -225,23 +228,30 @@ class Entry:
             cpkt = self._read_two_bytes(fd)
             if spkt == 0:
                 self.cert['signature_type'],cert_padding,cert_extra = 'DSA_SHA1',0,0
-            if spkt == 1:
+            elif spkt == 1:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'ECDSA_SHA256_P256',64,0
-            if spkt == 2:
+            elif spkt == 2:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'ECDSA_SHA384_P384',32,0
-            if spkt == 3:
+            elif spkt == 3:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'ECDSA_SHA512_P521',0,4
-            if spkt == 4:
+            elif spkt == 4:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'RSA_SHA256_2048',0,128
-            if spkt == 5:
+            elif spkt == 5:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'RSA_SHA384_3072',0,256
-            if spkt == 6:
+            elif spkt == 6:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'RSA_SHA512_4096',0,384
-            if spkt == 7:
+            elif spkt == 7:
                 self.cert['signature_type'],cert_padding,cert_extra  = 'EdDSA_SHA512_Ed25519',96,0
+            else:
+                Entry._log.debug('Bad cert sign type.')
+                return
+            
             # This is always going to be 0 (as of 0.9.19), but future versions can add more crypto types.
             if cpkt == 0:
                 self.cert['crypto_type'] = 'ElGamal'
+            else:
+                Entry._log.debug('Bad cert crypto type.')
+                return
         else: # Old format where information is all in the main part.
             self.cert['signature_type'],cert_padding,cert_extra = 'DSA_SHA1',0,0
             self.cert['crypto_type'] = 'ElGamal'
