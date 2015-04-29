@@ -66,6 +66,7 @@ class Entry:
     """
     _pubkey_size = 256
     _signkey_size = 128
+    _min_cert_size = 3
 
     _log = logging.getLogger('NDBEntry')
 
@@ -130,6 +131,12 @@ class Entry:
         b = Entry._read(fd,1)
         if b:
             return struct.unpack('!B', b)[0]
+
+    @staticmethod 
+    def _read_two_bytes(fd):
+        b = Entry._read(fd,2)
+        if b:
+            return struct.unpack('!H', b)[0]
     
     @staticmethod
     def _read_string(fd):
@@ -157,8 +164,8 @@ class Entry:
         addr.transport = Entry._read_string(fd)
         addr.options = Entry._read_mapping(fd)
         if addr.valid():
-			# This is a try because sometimes hostnames show up.
-			# TODO: Make it allow host names.
+            # This is a try because sometimes hostnames show up.
+            # TODO: Make it allow host names.
             try:
                 addr.location = geolite2.lookup(addr.options.get('host', None))
             except:
@@ -186,8 +193,15 @@ class Entry:
     def _load(self, fd):
         """
         load from file descriptor
+        More docs: http://i2p-projekt.i2p/en/docs/spec/common-structures#struct_RouterInfo
         """
-        data = self._read(fd, 387)
+
+        # router identity http://i2p-projekt.i2p/en/docs/spec/common-structures#struct_RouterIdentity
+        # Do not assume that these are always 387 bytes!
+		# There are 387 bytes plus the certificate length specified at bytes 385-386, which may be non-zero.
+
+        # Subtract because read the Certificate on it's own.
+        data = self._read(fd, 387-self._min_cert_size)
         if data is None:
             return
         ind = 0
@@ -196,12 +210,51 @@ class Entry:
         self.pubkey = sha256(data[ind:ind+self._pubkey_size])
         ind += self._pubkey_size
 
-        # signing key
-        self.signkey = sha256(data[ind:ind+self._signkey_size])
+        # signing key (we hash this later due to RI changes in 0.9.12)
+        self.signkey = data[ind:ind+self._signkey_size]
         ind + self._signkey_size
 
         # certificate
-        self.cert =  sha256(data[ind:])
+        self.cert = dict()
+
+        # If it's not null, follow what happens here: http://i2p-projekt.i2p/en/docs/spec/common-structures#type_Certificate
+        cert_type = self._read_byte(fd)
+        cert_len = self._read_two_bytes(fd)
+        if cert_type == 5 and cert_len != 0: # New format where extra information is in the cert.
+            spkt = self._read_two_bytes(fd)
+            cpkt = self._read_two_bytes(fd)
+            if spkt == 0:
+                self.cert['signature_type'],cert_padding,cert_extra = 'DSA_SHA1',0,0
+            if spkt == 1:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'ECDSA_SHA256_P256',64,0
+            if spkt == 2:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'ECDSA_SHA384_P384',32,0
+            if spkt == 3:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'ECDSA_SHA512_P521',0,4
+            if spkt == 4:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'RSA_SHA256_2048',0,128
+            if spkt == 5:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'RSA_SHA384_3072',0,256
+            if spkt == 6:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'RSA_SHA512_4096',0,384
+            if spkt == 7:
+                self.cert['signature_type'],cert_padding,cert_extra  = 'EdDSA_SHA512_Ed25519',96,0
+            # This is always going to be 0 (as of 0.9.19), but future versions can add more crypto types.
+            if cpkt == 0:
+                self.cert['crypto_type'] = 'ElGamal'
+        else: # Old format where information is all in the main part.
+            self.cert['signature_type'],cert_padding,cert_extra = 'DSA_SHA1',0,0
+            self.cert['crypto_type'] = 'ElGamal'
+
+        # Parse public key properly (http://i2p-projekt.i2p/en/docs/spec/common-structures#type_Certificate)
+        if cert_padding > 0:
+            self.signkey = self.signkey[cert_padding:]
+        if cert_extra > 0:
+            self.signkey += self._read(fd,cert_extra)
+
+        Entry._log.debug('parsed cert, sig type {}, crypto type {}.'.format(self.cert['signature_type'], self.cert['crypto_type']))
+    
+        self.signkey = sha256(self.signkey)
 
         # date published
         self.published  = self._read_time(fd)
@@ -248,7 +301,7 @@ class Entry:
         val += 'signkey={} '.format(b64encode(self.signkey))
         val += 'options={} '.format(self.options)
         val += 'addrs={} '.format(self.addrs)
-        val += 'cert={} '.format(b64encode(self.cert))
+        val += 'cert={} '.format(self.cert)
         val += 'published={} '.format(self.published)
         val += 'signature={}'.format(b64encode(self.signature))
         return val
@@ -258,11 +311,11 @@ class Entry:
         return dictionary in old format
         """
         return dict({
-           'pubkey':b64encode(self.pubkey),
+            'pubkey':b64encode(self.pubkey),
             'signkey':b64encode(self.signkey),
             'options':self.options,
             'addrs':self.addrs,
-            'cert':b64encode(self.cert),
+            'cert':self.cert,
             'published':self.published,
             'signature':b64encode(self.signature)
             })
