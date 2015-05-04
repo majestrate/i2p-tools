@@ -45,3 +45,6 @@ i2tun/i2tun
 # misc
 *.destination
 a.out
+
+# netdb
+netdb/tests/fuzzdb/*.dat
