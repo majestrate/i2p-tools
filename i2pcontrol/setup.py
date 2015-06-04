@@ -9,7 +9,7 @@ setup(name = 'i2pcontrol',
 	classifiers = 'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
     #install_requires = 'python-jsonrpc>=0.7.4',
     url = 'https://github.com/majestrate/i2p-tools',
-    package_dir = {'i2pcontrol': 'i2pcontrol'},
-    packages = ['i2pcontrol'],
+    #package_dir = {'i2pcontrol': 'i2pcontrol'},
+    packages = ['i2pcontrol', 'i2pcontrol.pyjsonrpc'],
 )
 
