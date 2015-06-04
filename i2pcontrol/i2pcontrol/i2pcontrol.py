@@ -74,20 +74,10 @@ class I2PController:
 			ssl_context = context
 		)
 
-		print pyjsonrpc.create_request_json('Authenticate',{ 
-			'API': I2PController.API_VERSION,
-			'Password': self._password
-			})
 		result = self._http_client.call('Authenticate',{ 
 			'API': I2PController.API_VERSION,
 			'Password': self._password
 			})
-		'''
-		result = self._http_client.format_it('Authenticate',{ 
-			'API': I2PController.API_VERSION,
-			'Password': self._password
-			})
-		'''
 
 		# TODO: Deal with errors better.
 		
