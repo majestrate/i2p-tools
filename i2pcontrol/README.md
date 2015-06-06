@@ -11,9 +11,9 @@ See `examples/`.
 
 ## License
 
-LGPL3.0+, see [LICENSE](LICENSE).
+MIT [license](LICENSE).
 Though not required, it's interesting to hear about where my code it used :smile:.
 
-Includes code from: <https://github.com/gerold-penz/python-jsonrpc> , also LGPL3.0+.
+Includes code from: [python-jsonrpc](https://github.com/gerold-penz/python-jsonrpc) , also MIT'd.
 Can be found in [i2pcontrol/pyjsonrpc](i2pcontrol/pyjsonrpc) .
 
