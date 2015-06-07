@@ -2,14 +2,18 @@
 from setuptools import setup
 
 setup(name = 'i2pcontrol',
-    version = '0.1',
+    version = '0.2',
     description = 'i2pcontrol wrapper',
     author = 'Chris Barry',
     author_email = 'chris@barry.im',
-	classifiers = 'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
-    #install_requires = 'python-jsonrpc>=0.7.4',
+	classifiers = [
+	'Development Status :: 5 - Production/Stable',
+	'License :: OSI Approved :: MIT License',
+	'Topic :: Utilities',
+	],
+    install_requires = ['bunch'], # Needed by pyjsonrpc
+    tests_require=['pytest'],
     url = 'https://github.com/majestrate/i2p-tools',
-    #package_dir = {'i2pcontrol': 'i2pcontrol'},
     packages = ['i2pcontrol', 'i2pcontrol.pyjsonrpc'],
 )
 
