@@ -57,8 +57,8 @@ class Address:
         return None not in (self.cost, self.transport, self.options, self.expire)
     
     def __repr__(self):
-        return 'Address: transport={} cost={} expire={} options={} location={}' \
-            .format(self.transport, self.cost, self.expire, self.options, self.location)
+        return 'Address: transport={} cost={} expire={} options={} location={} firewalled={}' \
+            .format(self.transport, self.cost, self.expire, self.options, self.location, self.firewalled)
     
 class Entry:
     """
@@ -163,6 +163,7 @@ class Entry:
         addr.expire = Entry._read_time(fd)
         addr.transport = Entry._read_string(fd)
         addr.options = Entry._read_mapping(fd)
+        addr.firewalled = False
         if addr.valid():
             # This is a try because sometimes hostnames show up.
             # TODO: Make it allow host names.
@@ -170,6 +171,18 @@ class Entry:
                 addr.location = geolite2.lookup(addr.options.get('host', None))
             except:
                 addr.location = None
+
+            # If the router is firewalled (i.e. has no 'host' mapping), then use the first introducer (of 3).
+            # In the future it might be worth it to do something else, but this helps for geopip information for now.
+            # http://i2p-projekt.i2p/en/docs/transport/ssu#ra
+            if not addr.location:
+                # If there are introducers then it's probably firewalled.
+                addr.firewalled = True
+                try:
+                    addr.location = geolite2.lookup(addr.options.get('ihost0', None))
+                except:
+                    addr.location = None
+
             return addr
 
     def __init__(self, filename):
