@@ -21,6 +21,7 @@ def test_address_valid():
 	valid.transport = 'SSU'
 	valid.options = {'host': '0.0.0.0', 'port': '1234', 'key': '', 'caps': ''}
 	valid.expire = 0
+	valid.firewalled = False
 	assert(valid.valid() and not invalid.valid())
 
 def test_address_repr():
@@ -29,7 +30,8 @@ def test_address_repr():
 	valid.transport = 'SSU'
 	valid.options = {'host': '0.0.0.0', 'port': '1234', 'key': '', 'caps': ''}
 	valid.expire = 0
-	assert(repr(valid) == 'Address: transport=SSU cost=10 expire=0 options={\'host\': \'0.0.0.0\', \'port\': \'1234\', \'key\': \'\', \'caps\': \'\'} location=None')
+	valid.firewalled = False
+	assert(repr(valid) == 'Address: transport=SSU cost=10 expire=0 options={\'host\': \'0.0.0.0\', \'port\': \'1234\', \'key\': \'\', \'caps\': \'\'} location=None firewalled=False')
 
 # TODO: test_entry*
 
@@ -60,7 +62,7 @@ def test_entry_dict():
 def test_fuzz():
     pwd = os.environ['PWD']
     for i in range(1,100):
-        with open('{}/fuzzdb/{}.dat'.format(pwd, i), 'wb') as fout:
+        with open('{}/tests/fuzzdb/{}.dat'.format(pwd, i), 'wb') as fout:
             fout.write(os.urandom(random.randint(2,400))) # replace 1024 with size_kb if not unreasonably large
     # Now let's inspect the garbage.
     netdb.inspect(netdb_dir='{}/fuzzdb/'.format(pwd))
