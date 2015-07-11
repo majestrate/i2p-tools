@@ -10,11 +10,9 @@ if len(sys.argv) > 1 and sys.argv[1] == 'config':
     print ('graph_vlabel bits in (-) / out (+) per ${graph_period}')
     print ('down.label bps')
     print ('down.type COUNTER')
-    print ('down.cdef down,8,*')
     print ('up.label bps')
     print ('up.type COUNTER')
     print ('up.negative down')
-    print ('up.cdef up,8,*')
 else:
     import i2pcontrol
     ctl = i2pcontrol.I2PController(use_ssl=False)
