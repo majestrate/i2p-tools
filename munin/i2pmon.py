@@ -6,6 +6,7 @@ import sys
 if len(sys.argv) > 1 and sys.argv[1] == 'config':
     print ('graph_title I2P Bandwidth')
     print ('graph_order down up')
+    print ('graph_category network')
     print ('graph_args --base 1000')
     print ('graph_vlabel bits in (-) / out (+) per ${graph_period}')
     print ('down.label inbound traffic')
