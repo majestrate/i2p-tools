@@ -68,15 +68,16 @@ class I2PController:
 		# I2PControl mandated SSL, even tho we will be localhost.
 		# Since we don't know the cert, and it's local, let's ignore it.
 		context = None
+		proto = 'http'
 		if use_ssl:
 			context = ssl.create_default_context()
 			context.check_hostname = False
 			context.verify_mode = ssl.CERT_NONE
-
+			proto += 's'
 		self._password = password
 		self._token = None
 		self._http_client = pyjsonrpc.HttpClient(
-			url = ''.join(['https://',address[0],':',str(address[1]),'/']),
+			url = ''.join(['{}://'.format(proto),address[0],':',str(address[1]),'/']),
 			ssl_context = context
 		)
 
