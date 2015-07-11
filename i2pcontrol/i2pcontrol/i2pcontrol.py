@@ -64,12 +64,14 @@ class I2PController:
 	DEFAULT_PORT = 7650
 	DEFAULT_PASSWORD = 'itoopie'
 
-	def __init__(self, address=(DEFAULT_HOST, DEFAULT_PORT), password=DEFAULT_PASSWORD):
+	def __init__(self, address=(DEFAULT_HOST, DEFAULT_PORT), password=DEFAULT_PASSWORD, ssl=True):
 		# I2PControl mandated SSL, even tho we will be localhost.
 		# Since we don't know the cert, and it's local, let's ignore it.
-		context = ssl.create_default_context()
-		context.check_hostname = False
-		context.verify_mode = ssl.CERT_NONE
+		context = None
+		if ssl:
+			context = ssl.create_default_context()
+			context.check_hostname = False
+			context.verify_mode = ssl.CERT_NONE
 
 		self._password = password
 		self._token = None
