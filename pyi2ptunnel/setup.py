@@ -9,6 +9,5 @@ setup(name = 'pyi2ptunnel',
     install_requires = ['txi2p', 'twisted'],
     tests_require=['pytest'],
     url = 'https://github.com/majestrate/i2p-tools',
-    package_dir = {'': 'src'},
     packages = ['pyi2ptunnel'],
 )
