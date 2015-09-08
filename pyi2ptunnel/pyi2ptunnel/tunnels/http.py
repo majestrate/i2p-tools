@@ -1,6 +1,7 @@
+from __future__ import absolute_import, division
+from twisted.python.compat import urllib_parse, urlquote
 from twisted.internet.protocol import ClientFactory
 from twisted.internet.endpoints import connectProtocol
-from twisted.python.compat import urllib_parse, urlquote
 from twisted.web.http import HTTPFactory, HTTPClient, HTTPChannel, Request
 from twisted.web.http.proxy import ProxyClient, ProxyClientFactory
 from pyi2ptunnel import util
