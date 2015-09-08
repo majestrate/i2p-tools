@@ -4,6 +4,7 @@ from twisted.internet.protocol import ClientFactory
 from twisted.internet.endpoints import connectProtocol
 from twisted.web.http import HTTPFactory, HTTPClient, HTTPChannel, Request
 from twisted.web.proxy import ProxyClient, ProxyClientFactory
+from twisted.internet import reactor
 from pyi2ptunnel import util
 
 
