@@ -1,0 +1,9 @@
+{
+  "tunnels" : [
+    {
+      "type" : "http-proxy",
+      "name" : "i2p http proxy",
+      "bind" : [ "127.0.0.1" : 4444 ],
+    }
+  ],
+}
