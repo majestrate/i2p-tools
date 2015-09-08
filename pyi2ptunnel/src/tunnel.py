@@ -5,7 +5,7 @@ application layer filtering i2p client/server tunnels
 
 import logging
 
-from pyi2ptunnel import tunnels
+from . import tunnels
 
 log = logging.getLogger("pyi2ptunnel.tunnel")
 
