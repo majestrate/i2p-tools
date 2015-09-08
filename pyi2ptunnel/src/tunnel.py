@@ -5,7 +5,10 @@ application layer filtering i2p client/server tunnels
 
 import logging
 
-from . import tunnels
+from pyi2ptunnel import tunnels
+
+from twisted.internet import reactor
+from twisted.internet.endpoints import clientFromString
 
 log = logging.getLogger("pyi2ptunnel.tunnel")
 
@@ -15,15 +18,25 @@ class TunnelFactory(object):
     creator of app tunnels
     """
 
-    def __init__(self, api="SAM", apiEndpoint="127.0.0.1:7656"):
-        self._api = api
-        self._apiEndpoint = apiEndpoint
+    def __init__(self, api="SAM", apiEndpoint="127.0.0.1:7656", socksPort=9050):
+        self.api = api
+        self.apiEndpoint = apiEndpoint
+        self.socksPort = socksPort
 
-
+    def endpoint(self, addr, port): 
+        if addr.endswith('.i2p'):
+            ep = 'i2p:{}:api={}:apiEndpoint={}'.format(addr, self.api, self.apiEndpoint.replace(':', '\\:'))
+        else:
+            ep = 'tor:host={}:port={}:socksPort={}'.format(addr, port, socksPort)
+        return clientFromString(reactor, ep)
+        
+                                
+                                    
+        
     def create(self, type, **param):
         """
         :returns: a twisted protocol factory
         """
         if type in tunnels.types:
-            return tunnels.types[type](**param)
+            return tunnels.types[type](self.endpoint, **param)
         
