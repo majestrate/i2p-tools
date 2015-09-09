@@ -3,7 +3,10 @@
     {
       "type" : "http",
       "name" : "i2p http proxy",
-      "bind" : [ "127.0.0.1" , 4444 ]
+      "listen" : "tcp:4444,interface=127.0.0.1",
+      "args" : {
+        
+      }
     }
   ]
 }
