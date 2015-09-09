@@ -4,6 +4,6 @@ i2p aware application layer filtering proxy tunnels
 
 from . import http
 
-types = {
-    "http-client" : http.Proxy
+clients = {
+    "http" : http.Proxy
 }

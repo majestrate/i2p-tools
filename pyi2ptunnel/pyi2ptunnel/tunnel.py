@@ -33,10 +33,13 @@ class TunnelFactory(object):
                                 
                                     
         
-    def create(self, type, **param):
+    def createClient(self, type, **param):
         """
         :returns: a twisted protocol factory
         """
-        if type in tunnels.types:
-            return tunnels.types[type](self.endpoint, **param)
+        if type in tunnels.clients:
+            return tunnels.clients[type](self.endpoint, **param)
         
+    def createServer(self, type, **param):
+        if type in tunnels.servers:
+            return tunnels.servers[type](self.endpoint, **param)

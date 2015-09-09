@@ -3,6 +3,7 @@
 #
 
 from twisted.internet import reactor
+from twisted.internet.endpoints import serverFromString
 
 from pyi2ptunnel import config
 from pyi2ptunnel import tunnel
@@ -42,15 +43,21 @@ def main():
         tunnels_config = cfg.get('clients', list())
         for tunnel_cfg in tunnels_config:
             type = tunnel_cfg.get("type")
+            tun_name = tunnel_cfg.get("name")
             if type:
-                tun = apptunnel.create(type, **tunnel_cfg.get("args", dict()))
-                if tun:
-                    log.info('added a {} tunnel'.format(type))
-                    tunnels.append(tun)
-                else:
-                    log.error("could not create tunnel a '{}' tunnel".format(type))
+                # build tunnel factory
+                tunnelFactory = apptunnel.createClient(type, **tunnel_cfg.get("args", dict()))
+                if tunnelFactory:
+                    ep_str = tunnel_cg.get("listen")
+                    if ep_str:
+                        # start it up
+                        ep = serverFromString(reactor, ep_str)
+                        ep.listen(tunnelFactory())
+                        log.info("{} will listen on {}".format(tun_name, ep_str))
+                    else:
+                        log.error("no listen address specified for {}".format(tun_name))
             else:
-                log.error("no tunnel type specified for {}".format(tunnel.get("name")))
+                log.error("no tunnel type specified for {}".format(tun_name))
         log.info("run reactor")
         reactor.run()
     else:
