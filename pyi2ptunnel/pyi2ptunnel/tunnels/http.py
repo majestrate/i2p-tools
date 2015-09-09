@@ -57,6 +57,7 @@ class _Proxy(HTTPChannel):
 
 
 def Proxy(createEndpoint, **kwargs):
-    factory = _Proxy
-    factory.createEndpoint = createEndpoint
+    factory = HTTPFactory()
+    factory.protocol = _Proxy
+    factory.protocol.createEndpoint = createEndpoint
     return factory
