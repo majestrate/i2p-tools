@@ -48,7 +48,7 @@ def main():
                 # build tunnel factory
                 tunnelFactory = apptunnel.createClient(type, **tunnel_cfg.get("args", dict()))
                 if tunnelFactory:
-                    ep_str = tunnel_cfg.get("listen")
+                    ep_str = tunnel_cfg.get("listen").decode('ascii')
                     if ep_str:
                         # start it up
                         ep = serverFromString(reactor, ep_str)
