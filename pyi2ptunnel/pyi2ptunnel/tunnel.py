@@ -25,7 +25,7 @@ class TunnelFactory(object):
 
     def endpoint(self, addr, port): 
         if addr.endswith('.i2p'):
-            ep = 'i2p:{}:api={}:apiEndpoint={}'.format(addr, self.api, self.apiEndpoint.replace(':', '\\:'))
+            ep = 'i2p:{}:api={}'.format(addr, self.api)
         else:
             ep = 'tor:host={}:port={}:socksPort={}'.format(addr, port, socksPort)
         print (ep)
