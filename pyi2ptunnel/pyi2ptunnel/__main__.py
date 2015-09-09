@@ -48,10 +48,10 @@ def main():
                 # build tunnel factory
                 tunnelFactory = apptunnel.createClient(type, **tunnel_cfg.get("args", dict()))
                 if tunnelFactory:
-                    ep_str = tunnel_cfg.get("listen").decode('ascii')
+                    ep_str = tunnel_cfg.get("listen")
                     if ep_str:
                         # start it up
-                        ep = serverFromString(reactor, ep_str)
+                        ep = serverFromString(reactor, str(ep_str))
                         ep.listen(tunnelFactory())
                         log.info("{} will listen on {}".format(tun_name, ep_str))
                     else:
