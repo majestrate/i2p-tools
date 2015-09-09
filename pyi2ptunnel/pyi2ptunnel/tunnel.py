@@ -28,6 +28,7 @@ class TunnelFactory(object):
             ep = 'i2p:{}:api={}:apiEndpoint={}'.format(addr, self.api, self.apiEndpoint.replace(':', '\\:'))
         else:
             ep = 'tor:host={}:port={}:socksPort={}'.format(addr, port, socksPort)
+        print (ep)
         return clientFromString(reactor, ep)
         
                                 
