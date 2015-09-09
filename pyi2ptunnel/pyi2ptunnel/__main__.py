@@ -39,8 +39,7 @@ def main():
         
         apptunnel = tunnel.TunnelFactory(api="SAM", apiEndpoint=samaddr)
         tunnels = list()        
-        # load tunnel config
-        tunnels_config = cfg.get('tunnels', list())
+        tunnels_config = cfg.get('clients', list())
         for tunnel_cfg in tunnels_config:
             type = tunnel_cfg.get("type")
             if type:

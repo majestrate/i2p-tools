@@ -6,4 +6,5 @@ import json
 
 def Load(fname):
     with open(fname) as f:
-        return json.load(f)
+        data = f.read()
+    return json.loads(data.strip())
