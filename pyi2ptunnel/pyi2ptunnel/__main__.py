@@ -32,7 +32,7 @@ def main():
         cfg = config.Load(args.config)
         log.info('loaded config')
 
-        samaddr = "127.0.0.1:7657"
+        samaddr = "tcp:127.0.0.1:7657"
 
         # check config for override
         if "sam" in cfg and "addr" in cfg["sam"]:

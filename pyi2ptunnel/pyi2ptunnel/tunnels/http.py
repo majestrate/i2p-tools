@@ -11,7 +11,7 @@ from pyi2ptunnel import util
 class _I2PProxyRequest(Request):
 
     protocols = {
-        b'http' : ProxyClient,
+        b'http' : ProxyClientFactory,
     }
     ports = {
         b'http' : 80,
@@ -38,18 +38,22 @@ class _I2PProxyRequest(Request):
         rest = urllib_parse.urlunparse((b'', b'') + parsed[2:])
         if not rest:
             rest = rest + b'/'
-        factory = self.protocols[protocol]
-        headers = self.getAllHeaders().copy()
-        if b'host' not in headers:
-            headers[b'host'] = host.encode('ascii')
-            
-        headers[b'User-Agent'] = b'I2P'
-            
-        self.content.seek(0, 0)
-        s = self.content.read()
-        client = factory(self.method, rest, self.clientproto, headers, s, self)
-        ep = self.endpointFactory(host, port)
-        connectProtocol(ep, client)
+        
+        if protocol in self.protocols:
+            factory = self.protocols[protocol]
+            headers = self.getAllHeaders().copy()
+            if b'host' not in headers:
+                headers[b'host'] = host.encode('ascii')
+                
+            headers.pop(b'user-agent', None)
+            headers[b'user-agent'] = b'I2P'
+        
+        
+            self.content.seek(0, 0)
+            s = self.content.read()
+            client = factory(self.method, rest, self.clientproto, headers, s, self)
+            ep = self.endpointFactory(host, port)
+            connectProtocol(ep, client.buildProtocol(ep))
         
 class _Proxy(HTTPChannel):
 

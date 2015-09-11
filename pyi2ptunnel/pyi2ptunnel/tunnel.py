@@ -8,7 +8,7 @@ import logging
 from pyi2ptunnel import tunnels
 
 from twisted.internet import reactor
-from twisted.internet.endpoints import clientFromString
+from twisted.internet.endpoints import clientFromString, quoteStringArgument
 
 log = logging.getLogger("pyi2ptunnel.tunnel")
 
@@ -18,26 +18,24 @@ class TunnelFactory(object):
     creator of app tunnels
     """
 
-    def __init__(self, api="SAM", apiEndpoint="127.0.0.1:7656", socksPort=9050):
+    def __init__(self, api="SAM", apiEndpoint="tcp:127.0.0.1:7656", socksPort=9050):
         self.api = api
-        self.apiEndpoint = apiEndpoint
+        self.apiEndpoint = quoteStringArgument(apiEndpoint)
         self.socksPort = socksPort
 
-    def endpoint(self, addr, port): 
+    def endpoint(self, addr, port):
+        """
+        return the endpoint
+        """
         if addr.endswith('.i2p'):
-            ep = 'i2p:{}:api={}'.format(addr, self.api)
+            ep = 'i2p:{}:api={}:apiEndpoint={}'.format(addr, self.api, self.apiEndpoint)
         else:
-            ep = 'tor:host={}:port={}:socksPort={}'.format(addr, port, socksPort)
-        print (ep)
+            ep = 'tor:host={}:port={}:socksPort={}'.format(addr, port, self.socksPort)
         return clientFromString(reactor, ep)
-        
                                 
                                     
         
     def createClient(self, type, **param):
-        """
-        :returns: a twisted protocol factory
-        """
         if type in tunnels.clients:
             return tunnels.clients[type](self.endpoint, **param)
         
