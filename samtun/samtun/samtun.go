@@ -74,6 +74,7 @@ func Run() {
             // create our datagram session
             log.Println("creating session")
             dg, err := sam.NewDatagramSession(session, keys, sam3.Options_Fat, 0)
+            defer dg.Close()
             if err == nil {
               log.Println("session made")
               addr, err := sam.Lookup("ME")
@@ -83,6 +84,7 @@ func Run() {
               }
               log.Println("we are", addr.Base32())
               // look up remote destination
+              var remote_addr sam3.I2PAddr
               for {
                 if len(remote) == 0 {
                   // not set
@@ -90,7 +92,7 @@ func Run() {
                   return
                 }
                 log.Println("looking up", remote)
-                remote_addr, err := sam.Lookup(remote)
+                remote_addr, err = sam.Lookup(remote)
                 if err == nil {
                   log.Println(remote, "resolved to", remote_addr.Base32())
                   break
@@ -102,12 +104,70 @@ func Run() {
               log.Println("open", ifname)
               iface, err := newTun(ifname, localaddr, remoteaddr, int(mtu))
               defer iface.Close()
-              for {
-                select {
+              tunpkt_inchnl := make(chan []byte)
+              //tunpkt_outchnl := make(chan []byte)
+              sampkt_inchnl := make(chan []byte)
+              //sampkt_outchnl := make(chan []byte)
+              // read packets from tun
+              go func() {
+                for {
+                  pktbuff := make([]byte, mtu+8)
+                  n, err := iface.Read(pktbuff[:])
+                  if err == nil {
+                    tunpkt_inchnl <- pktbuff[:n]
+                  } else {
+                    log.Println("error while reading tun packet", err)
+                    close(tunpkt_inchnl)
+                    return
+                  }
                 }
-              }
+              }()
+
+              // read packets from sam
+              go func() {
+                pktbuff := make([]byte, mtu+8)
+                n, from, err := dg.ReadFrom(pktbuff)
+                if err == nil {
+                  if from.Base32() == remote_addr.Base32() {
+                    // got packet from sam
+                    sampkt_inchnl <- pktbuff[:n]
+                  } else {
+                  // unwarrented
+                    log.Println("unwarrented packet from", from.Base32())
+                  }
+                } else {
+                  log.Println("error while reading sam packet", err)
+                  close(sampkt_inchnl)
+                  return
+                }
+              }()
+              done_chnl := make(chan bool)
+              go func() {
+                for {
+                  select {
+                  case pkt := <- tunpkt_inchnl:
+                    _, err := dg.WriteTo(pkt, remote_addr)
+                    if err == nil {
+                      // we gud
+                    } else {
+                      log.Println("error writing to remote destination", err)
+                      done_chnl <- true
+                      return
+                    }
+                  case pkt := <- sampkt_inchnl:
+                    _, err := iface.Write(pkt)
+                    if err == nil {
+                      // we gud
+                    } else {
+                      log.Println("error writing to tun interface", err)
+                      done_chnl <- true
+                      return
+                    }
+                  }
+                }
+              }()
+              <- done_chnl
               log.Println("closing")
-              dg.Close()
             } else {
               log.Fatal(err)
             }
