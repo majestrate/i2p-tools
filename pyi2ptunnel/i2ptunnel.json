@@ -1,0 +1,15 @@
+{
+  "clients" : [
+    {
+      "type" : "http",
+      "name" : "i2p http proxy",
+      "listen" : "tcp:4444:interface=127.0.0.1",
+      "args" : {
+        
+      }
+    }
+  ],
+  "sam" : {
+    "addr": "tcp:127.0.0.1:7656"
+  }
+}
