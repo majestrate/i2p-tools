@@ -101,7 +101,9 @@ import (
   "errors"
 )
 
-type tunDev C.int
+type tunDev struct {
+  fd C.int
+}
 
 func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
   fd := C.tundev_open(C.CString(ifname))
@@ -112,22 +114,22 @@ func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
     if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
       err = errors.New("cannot put up interface")
     } else {
-      return tunDev(fd), nil
+      t = tunDev{fd}
     }
   }
-  return -1, err
+  return
 }
 
 // read from the tun device
-func (t tunDev) Read(d []byte) (n int, err error) {
-  return fdRead(C.int(t), d)
+func (t *tunDev) Read(d []byte) (n int, err error) {
+  return fdRead(C.int(t.fd), d)
 }
 
-func (t tunDev) Write(d []byte) (n int, err error) {
-  return fdWrite(C.int(t), d)
+func (t *tunDev) Write(d []byte) (n int, err error) {
+  return fdWrite(C.int(t.fd), d)
 }
 
 
-func (d tunDev) Close() {
-  C.tundev_close(C.int(d))
+func (t *tunDev) Close() {
+  C.tundev_close(C.int(t.fd))
 }

@@ -117,8 +117,7 @@ func Run() {
                     tunpkt_inchnl <- pktbuff[:n]
                   } else {
                     log.Println("error while reading tun packet", err)
-                    close(tunpkt_inchnl)
-                    return
+                    time.Sleep(time.Second)
                   }
                 }
               }()
