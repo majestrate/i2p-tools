@@ -59,7 +59,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       perror("SIOCGIFFLAGS");
       return -1;
     }
-    ifr.ifr_flags |= IFF_POINTOPOINT;
+    ifr.ifr_flags |= IFF_POINTOPOINT | IFF_UP | IFF_RUNNING;
     if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       return -1;
@@ -96,18 +96,6 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       perror("SIOCSIFADDR");
      return -1;
-    }
-
-    if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
-      close(fd);
-      perror("SIOCGIFFLAGS");
-      return -1;
-    }
-
-    ifr.ifr_flags |= IFF_UP;
-    if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
-      close(fd);
-      return -1;
     }
 
     close(fd);
