@@ -12,6 +12,7 @@ package samtun
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
