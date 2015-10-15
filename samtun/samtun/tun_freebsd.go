@@ -55,10 +55,20 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
 
     struct sockaddr_in dst;
     memset(&dst, 0, sizeof(dst));
-    inet_aton(dstaddr, &dst.sin_addr);
+    dst.sin_family = AF_INET;
+    if ( ! inet_aton(dstaddr, &dst.sin_addr) ) {
+      printf("invalid dstaddr %s\n", dstaddr);
+      close(fd);
+      return -1;
+    }
     struct sockaddr_in src;
     memset(&src, 0, sizeof(src));
-    inet_aton(addr, &src.sin_addr);
+    src.sin_family = AF_INET;
+    if ( ! inet_aton(addr, &src.sin_addr) ) {
+      printf("invalid srcaddr %s\n", addr);
+      close(fd);
+      return -1;
+    }
     memcpy(&ifr.ifr_addr, &src, sizeof(src));
     memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {

@@ -7,6 +7,7 @@ package samtun
 /*
 
 #include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -45,23 +46,42 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
+    int idx = ifr.ifr_ifindex;
     ifr.ifr_mtu = mtu;
     if ( ioctl(fd, SIOCSIFMTU, (void*) &ifr) < 0) {
       close(fd);
       perror("SIOCSIFMTU");
       return -1;
     }
+
     struct sockaddr_in dst;
-    memset(&dst, 0, sizeof(dst));
-    inet_aton(dstaddr, &dst.sin_addr);
+    memset(&dst, 0, sizeof(struct sockaddr_in));
+    dst.sin_family = AF_INET;
+    if ( ! inet_aton(dstaddr, &dst.sin_addr) ) {
+      printf("invalid dstaddr %s\n", dstaddr);
+      close(fd);
+      return -1;
+    }
     struct sockaddr_in src;
-    memset(&src, 0, sizeof(src));
-    inet_aton(addr, &src.sin_addr);
-    memcpy(&ifr.ifr_addr, &src, sizeof(src));
-    memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
+    memset(&src, 0, sizeof(struct sockaddr_in));
+    src.sin_family = AF_INET;
+    if ( ! inet_aton(addr, &src.sin_addr) ) {
+      printf("invalid srcaddr %s\n", addr);
+      close(fd);
+      return -1;
+    }
+
+    memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCSIFADDR");
+     return -1;
+    }
+    memcpy(&ifr.ifr_dstaddr, &dst, sizeof(struct sockaddr_in));
+
+    if ( ioctl(fd, SIOCSIFDSTADDR, (void*)&ifr) < 0 ) {
+      close(fd);
+      perror("SIOCSIFDSTADDR");
      return -1;
     }
     if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
