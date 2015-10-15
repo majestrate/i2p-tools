@@ -4,54 +4,50 @@
 package samtun
 
 import (
-  "errors"
-  "github.com/majestrate/configparser"
-  "log"
+  "encoding/json"
+  "io/ioutil"
 )
 
-type config map[string]string
+type jsonConfig struct {
+  Keyfile string
+  Sam string
+  Addr string
+  Ifname string
+  Session string
+  Netmask string
+  MTU int
+  Map addrMap
+}
 
-// checks if the config has all required keys
-func (self config) validate() error {
-  for _, k := range []string{"ifname", "sam", "keyfile", "netmask", "srcaddr", "dstaddr", "remote", "bindether"} {
-    _, ok := self[k]
-    if ! ok {
-      return errors.New("missing key in config: "+k)
-    }
+func (conf *jsonConfig) Save(fname string) (err error) {
+  var data []byte
+  data, err = json.Marshal(conf)
+  if err == nil {
+    err = ioutil.WriteFile(fname, data, 0600)
   }
-  return nil
+  return
 }
 
 // generate default config
-// save it to a file
-func genConfig(fname string) {
-  cfg := configparser.NewConfiguration()
-  sect := cfg.NewSection("samtun")
-  sect.Add("ifname", "i2p0")
-  sect.Add("sam", "127.0.0.1:7656")
-  sect.Add("keyfile", "samtun.key")
-  sect.Add("netmask", "255.255.255.255")
-  sect.Add("srcaddr", "10.5.0.2")
-  sect.Add("dstaddr", "10.5.0.1")
-  sect.Add("remote", "")
-  sect.Add("mtu", "4096")
-  sect.Add("bindether", "eth0")
-  sect.Add("session", "samtun")
-  err := configparser.Save(cfg, fname)
-  if err != nil {
-    log.Fatal(err)
-  }
+func genConfig(fname string) (cfg jsonConfig) {
+  cfg.Keyfile = "samtun.key"
+  cfg.Sam = "127.0.0.1:7656"
+  cfg.Ifname = "i2p0"
+  cfg.MTU = 8192
+  cfg.Addr = "10.9.0.1"
+  cfg.Netmask = "255.255.0.0"
+  cfg.Session = "samtun"
+  cfg.Map = make(addrMap)
+  return
 }
 
 // load samtun config
 // does not check validity
-func loadConfig(fname string) (conf config, err error) {
-  cfg, err := configparser.Read(fname)
+func loadConfig(fname string) (conf jsonConfig, err error) {
+  var data []byte
+  data, err = ioutil.ReadFile(fname)
   if err == nil {
-    s, err := cfg.Find("samtun")
-    if err == nil {
-      return s[0].Options(), nil
-    }
+    err = json.Unmarshal(data, &conf)
   }
   return
 }

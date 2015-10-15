@@ -34,7 +34,7 @@ int tundev_open(char * ifname) {
   return fd;
 }
 
-int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
+int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
 
   struct ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
@@ -53,15 +53,6 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       perror("SIOCSIFMTU");
       return -1;
     }
-
-    struct sockaddr_in dst;
-    memset(&dst, 0, sizeof(struct sockaddr_in));
-    dst.sin_family = AF_INET;
-    if ( ! inet_aton(dstaddr, &dst.sin_addr) ) {
-      printf("invalid dstaddr %s\n", dstaddr);
-      close(fd);
-      return -1;
-    }
     struct sockaddr_in src;
     memset(&src, 0, sizeof(struct sockaddr_in));
     src.sin_family = AF_INET;
@@ -77,13 +68,21 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       perror("SIOCSIFADDR");
      return -1;
     }
-    memcpy(&ifr.ifr_dstaddr, &dst, sizeof(struct sockaddr_in));
-
-    if ( ioctl(fd, SIOCSIFDSTADDR, (void*)&ifr) < 0 ) {
+    struct sockaddr_in mask;
+    memset(&mask, 0, sizeof(struct sockaddr_in));
+    mask.sin_family = AF_INET;
+    if ( ! inet_aton(netmask, &mask.sin_addr) ) {
       close(fd);
-      perror("SIOCSIFDSTADDR");
-     return -1;
+      printf("invalid netmask %s\n", netmask);
+      return -1;
     }
+    memcpy(&ifr.ifr_netmask, &mask, sizeof(struct sockaddr_in));
+    if ( ioctl(fd, SIOCSIFNETMASK, (void*) &ifr) < 0) {
+      close(fd);
+      perror("SIOCSIFNETMASK");
+      return -1;
+    }
+
     if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCGIFFLAGS");
@@ -115,13 +114,13 @@ type tunDev struct {
   fd C.int
 }
 
-func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
+func newTun(ifname, addr, mask string, mtu int) (t tunDev, err error) {
   fd := C.tundev_open(C.CString(ifname))
   
   if fd == -1 {
     err = errors.New("cannot open tun interface")
   } else {
-    if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
+    if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(mask), C.int(mtu)) < C.int(0) {
       err = errors.New("cannot put up interface")
     } else {
       t = tunDev{fd}
