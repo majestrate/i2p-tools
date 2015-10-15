@@ -54,6 +54,17 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       return -1;
     }
 
+    if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
+      close(fd);
+      perror("SIOCGIFFLAGS");
+      return -1;
+    }
+    ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+    if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
+      close(fd);
+      return -1;
+    }
+
     struct sockaddr_in dst;
     memset(&dst, 0, sizeof(struct sockaddr_in));
     dst.sin_family = AF_INET;
@@ -84,16 +95,6 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       perror("SIOCSIFADDR");
      return -1;
-    }
-    if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
-      close(fd);
-      perror("SIOCGIFFLAGS");
-      return -1;
-    }
-    ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-    if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
-      close(fd);
-      return -1;
     }
 
     close(fd);
