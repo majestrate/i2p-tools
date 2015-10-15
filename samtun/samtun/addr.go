@@ -43,7 +43,6 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (pkt ipPac
       log.Println("short packet from", src, len(pkt), "bytes")
       return
     } else {
-      log.Println(src, "to", dst)
       if msg.pkt.Dst().Equal(dst) && msg.pkt.Src().Equal(src) {
         return msg.pkt
       }

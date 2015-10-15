@@ -150,13 +150,11 @@ func Run() {
               case data, ok := <- tunpkt_inchnl:
                 if ok {
                   pkt := ipPacket(data)
-                  src := pkt.Src()
                   dst := pkt.Dst()
                   b32 := conf.Map.B32(dst.String())
                   if len(b32) == 0 {
                     log.Println("cannot send packet to", dst, "unknown endpoint")
                   } else {
-                    log.Println("tunpkt" , src, "to", dst, "aka", b32)
                     dest, ok := dest_cache[b32]
                     if ok {
                       _, err := dg.WriteTo(pkt[:], dest)
