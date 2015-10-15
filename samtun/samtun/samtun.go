@@ -75,6 +75,7 @@ func Run() {
             log.Println("creating session")
             dg, err := sam.NewDatagramSession(session, keys, sam3.Options_Fat, 0)
             if err == nil {
+              log.Println("session made")
               addr, err := sam.Lookup("ME")
               if err != nil {
                 log.Println("failed to lookup our own destination")
