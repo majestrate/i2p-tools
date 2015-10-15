@@ -32,7 +32,8 @@ func Run() {
   }
   if ! checkfile(fname) {
     // generate a config we don't have it there
-    genConfig(fname)
+    conf := genConfig(fname)
+    conf.Save(fname)
   }
   conf, err := loadConfig(fname)
   if err == nil {
