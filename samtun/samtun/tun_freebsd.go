@@ -118,6 +118,15 @@ func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
   return -1, err
 }
 
+// read from the tun device
+func (t tunDev) Read(d []byte) (n int, err error) {
+  return fdRead(C.int(t), d)
+}
+
+func (t tunDev) Write(d []byte) (n int, err error) {
+  return fdWrite(C.int(t), d)
+}
+
 
 func (d tunDev) Close() {
   C.tundev_close(C.int(d))
