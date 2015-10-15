@@ -1,5 +1,5 @@
-//
-// tun.go -- tun interface with cgo for linux / bsd
+// +build freebsd
+// tun_freebsd.go -- tun interface with cgo for linux / bsd
 //
 
 package samtun
@@ -15,8 +15,8 @@ package samtun
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <linux/if.h>
-#include <linux/if_tun.h>
+#include <net/if.h>
+#include <net/if_tun.h>
 
 int tundev_open(char * ifname) {
   int fd = open("/dev/net/tun", O_RDWR);
