@@ -41,12 +41,6 @@ int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
   strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
   int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if ( fd > 0 ) {
-    if ( ioctl(fd, SIOCGIFINDEX, (void*) &ifr) < 0 ) {
-      perror("SIOCGIFINDEX");
-      close(fd);
-      return -1;
-    }
-    int idx = ifr.ifr_index;
     ifr.ifr_mtu = mtu;
     if ( ioctl(fd, SIOCSIFMTU, (void*) &ifr) < 0) {
       close(fd);
