@@ -37,9 +37,13 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (frame lin
     frame = nil
   } else {
     for _, pkt := range msg.frame {
-      pkt.setDst(dst)
-      pkt.setSrc(src)
-      frame = append(frame, pkt)
+      if pkt == nil && len(pkt) > 20 {
+        // back packet
+      } else {
+        pkt.setDst(dst)
+        pkt.setSrc(src)
+        frame = append(frame, pkt)
+      }
     }
   }
   return
