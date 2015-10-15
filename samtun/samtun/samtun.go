@@ -48,8 +48,11 @@ func Run() {
       remote := conf["remote"]
       mtu_str := conf["mtu"]
       session := conf["session"]
-      _, err = strconv.ParseInt(mtu_str, 10, 32)
-      iface, err := newTun(ifname)
+      localaddr := conf["srcaddr"]
+      remoteaddr := conf["dstaddr"]
+      mtu, err := strconv.ParseInt(mtu_str, 10, 32)
+      iface, err := newTun(ifname, localaddr, remoteaddr, int(mtu))
+      defer iface.Close()
       if err == nil {
         log.Println("connecting to", samaddr)
         sam, err := sam3.NewSAM(samaddr)
@@ -70,47 +73,50 @@ func Run() {
             privkey := strings.Split(key_str, " ")[0]
             pubkey := strings.Split(key_str, " ")[1]
             keys := sam3.NewKeys(sam3.I2PAddr(pubkey), privkey)
-            // now we bring the interface up
-            err = iface.Up()
+            // create our datagram session
+            log.Println("creating session")
+            dg, err := sam.NewDatagramSession(session, keys, sam3.Options_Fat, 0)
             if err == nil {
-              // create our datagram session
-              log.Println("creating session")
-              dg, err := sam.NewDatagramSession(session, keys, sam3.Options_Fat, 0)
-              if err == nil {
-                our_addr := sam3.I2PAddr(pubkey)
-                log.Println("we are", our_addr.Base32())
-                // look up remote destination
-                for {
-                  log.Println("looking up", remote)
-                  remote_addr, err := sam.Lookup(remote)
-                  if err == nil {
-                    log.Println(remote, "resolved to", remote_addr.Base32())
-                    break
-                  } else {
-                    log.Println("failed", err)
-                  }
-                  time.Sleep(time.Second)
+              our_addr := sam3.I2PAddr(pubkey)
+              log.Println("we are", our_addr.Base32())
+              // look up remote destination
+              for {
+                if len(remote) == 0 {
+                  // not set
+                  log.Println("please set the remote destination in the config")
+                  return
                 }
-                for {
-                  select {
-                  }
+                log.Println("looking up", remote)
+                remote_addr, err := sam.Lookup(remote)
+                if err == nil {
+                  log.Println(remote, "resolved to", remote_addr.Base32())
+                  break
+                } else {
+                  log.Println("failed", err)
                 }
-                log.Println("closing")
-                dg.Close()
-              } else {
-                log.Fatal(err)
+                time.Sleep(time.Second)
               }
+              for {
+                select {
+                }
+              }
+              log.Println("closing")
+              dg.Close()
             } else {
               log.Fatal(err)
             }
+          } else {
+            log.Fatal(err)
           }
+          
         } else {
           log.Fatal(err)
         }
+      } else {
+        log.Fatal(err)
       }
+    } else {
+      log.Fatal(err)
     }
-  }
-  if err != nil {
-    log.Fatal(err)
   }
 }

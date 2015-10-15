@@ -40,36 +40,41 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
   strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
   int fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP);
   if ( fd > 0 ) {
-    if ( ioctl(fd, SIOCGIFINDEX, &ifr) < 0 ) {
-      close(fd);
-      return -1;
-    }
-    struct sockaddr_in dst;
-    memset(&dst, 0, sizeof(dst));
-    inet_aton(dstaddr, &dst.sin_addr);
-    struct sockaddr_in src;
-    memset(&src, 0, sizeof(src));
-    inet_aton(addr, &src.sin_addr);
-    memcpy(&ifr.ifr_addr, &src, sizeof(src));
-    memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
-    if ( ioctl(fd, SIOCSIFADDR, &ifr) < 0 ) {
+    if ( ioctl(fd, SIOCGIFINDEX, (void*) &ifr) < 0 ) {
+      perror("SIOCGIFINDEX");
       close(fd);
       return -1;
     }
     ifr.ifr_mtu = mtu;
-    if ( ioctl(fd, SIOCSIFMTU, &ifr) < 0) {
+    if ( ioctl(fd, SIOCSIFMTU, (void*) &ifr) < 0) {
       close(fd);
+      perror("SIOCSIFMTU");
       return -1;
     }
-    if ( ioctl(fd, SIOCGIFFLAGS, &ifr) < 0 ) {
+    if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
+      perror("SIOCGIFFLAGS");
       return -1;
     }
     ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
-    if ( ioctl(fd, SIOCSIFFLAGS, &ifr) < 0 ) {
+    if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       return -1;
     }
+    //struct sockaddr_in dst;
+    //memset(&dst, 0, sizeof(dst));
+    //inet_aton(dstaddr, &dst.sin_addr);
+    //struct sockaddr_in src;
+    //memset(&src, 0, sizeof(src));
+    //inet_aton(addr, &src.sin_addr);
+    //memcpy(&ifr.ifr_addr, &src, sizeof(src));
+    //memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
+    //if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
+    //  close(fd);
+    //  perror("SIOCSIFADDR");
+    // return -1;
+    //}
+
     close(fd);
     return 0;
   } 
@@ -83,22 +88,28 @@ void tundev_close(int fd) {
 */
 import "C"
 
+import (
+  "errors"
+)
 
 type tunDev C.int
 
-func newTun(ifname, addr, dstaddr string) (t tunDev, err error) {
-  t = C.tundev_open(C.CString(ifname))
-  if t == -1 {
+func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
+  fd := C.tundev_open(C.CString(ifname))
+  
+  if fd == -1 {
     err = errors.New("cannot open tun interface")
   } else {
-    if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(dstaddr), C.int(mtu)) < 0 {
+    if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
       err = errors.New("cannot put up interface")
+    } else {
+      return tunDev(fd), nil
     }
   }
-  return 
+  return -1, err
 }
 
 
 func (d tunDev) Close() {
-  C.tundev_close(d)
+  C.tundev_close(C.int(d))
 }
