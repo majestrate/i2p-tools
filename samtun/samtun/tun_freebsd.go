@@ -82,13 +82,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
-    memset(&ifr, 0, sizeof(struct ifreq));
-    if (strlen(ifname) > IFNAMSIZ) {
-      return -1;
-    }
-    char name[IFNAMSIZ];
-    sprintf(name, "/dev/%s", ifname);
-    strncpy(ifr.ifr_name, name, IFNAMSIZ);
+    ifr.ifr_index = idx;
     memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
       close(fd);
