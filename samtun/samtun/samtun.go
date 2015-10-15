@@ -5,6 +5,7 @@ import (
   "fmt"
   "io/ioutil"
   "log"
+  "net"
   "os"
   "strings"
   "time"
@@ -38,7 +39,11 @@ func Run() {
   conf, err := loadConfig(fname)
   if err == nil {
     // we are configured correctly
-
+    ip, _, err := net.ParseCIDR(conf.Addr)
+    if err != nil {
+      log.Println("invalid address", conf.Addr)
+      return 
+    }
     log.Println("connecting to", conf.Sam)
     sam, err := sam3.NewSAM(conf.Sam)
     if err == nil {
@@ -77,7 +82,7 @@ func Run() {
             return
           }
           log.Println("we are", ourAddr.Base32())
-          iface, err := newTun(conf.Ifname, conf.Addr, conf.Netmask, conf.MTU)
+          iface, err := newTun(conf.Ifname, ip.String(), conf.Netmask, conf.MTU)
           defer iface.Close()
           tunpkt_inchnl := make(chan []byte)
           //tunpkt_outchnl := make(chan []byte)

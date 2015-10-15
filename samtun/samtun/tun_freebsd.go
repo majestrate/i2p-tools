@@ -54,12 +54,44 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       return -1;
     }
 
+    struct sockaddr_in src;
+    memset(&src, 0, sizeof(struct sockaddr_in));
+    src.sin_family = AF_INET;
+    if ( ! inet_aton(addr, &src.sin_addr) ) {
+      printf("invalid srcaddr %s\n", addr);
+      close(fd);
+      return -1;
+    }
+
+    memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
+    if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
+      close(fd);
+      perror("SIOCSIFADDR");
+     return -1;
+    }
+
+    struct sockaddr_in mask;
+    memset(&mask, 0, sizeof(struct sockaddr_in));
+    mask.sin_family = AF_INET;
+    if ( ! inet_aton(netmask, &mask.sin_addr) ) {
+      close(fd);
+      printf("invalid netmask %s\n", netmask);
+      return -1;
+    }
+
+    memcpy(&ifr.ifr_netmask, &mask, sizeof(struct sockaddr_in));
+    if ( ioctl(fd, SIOCSIFNETMASK, (void*) &ifr) < 0) {
+      close(fd);
+      perror("SIOCSIFNETMASK");
+      return -1;
+    }
+
     if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCGIFFLAGS");
       return -1;
     }
-    ifr.ifr_flags |= IFF_POINTOPOINT | IFF_UP ;
+    ifr.ifr_flags |= IFF_UP ;
     if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
       perror("SIOCSIFFLAGS");
       close(fd);
