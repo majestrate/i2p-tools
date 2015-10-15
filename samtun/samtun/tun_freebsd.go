@@ -46,7 +46,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
-    int idx = ifreq.ifr_ifindex;
+    int idx = ifreq.ifr_index;
     ifr.ifr_mtu = mtu;
     if ( ioctl(fd, SIOCSIFMTU, (void*) &ifr) < 0) {
       close(fd);
@@ -73,7 +73,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
     }
     memset(&ifr, 0, sizeof(struct ifreq));
     memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
-    ifr.ifr_ifindex = idx;
+    ifr.ifr_index = idx;
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCSIFADDR");
