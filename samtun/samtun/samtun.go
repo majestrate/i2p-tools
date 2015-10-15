@@ -166,7 +166,8 @@ func Run() {
                     log.Println("tunpkt" , src, "to", dst, "aka", b32)
                     dest, ok := dest_cache[b32]
                     if ok {
-                      _, err := dg.WriteTo(data, dest)
+                      frame := linkFrame{pkt}
+                      _, err := dg.WriteTo(frame.Bytes(), dest)
                       if err == nil {
                         // we gud
                       } else {
