@@ -35,16 +35,18 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (pkt ipPac
   src := net.ParseIP(m.IP(msg.addr.Base32()))
   if dst == nil || src == nil {
     // bad address
-    pkt = nil
+    return
   } else {
-    pkt = msg.pkt
-    if pkt == nil || len(pkt) < 20 {
+
+    if msg.pkt == nil || len(msg.pkt) < 20 {
       // back packet
       log.Println("short packet from", src, len(pkt), "bytes")
-      pkt = nil
+      return
     } else {
-      pkt.setDst(dst)
-      pkt.setSrc(src)
+      log.Println(src, "to", dst)
+      msg.pkt.setDst(dst)
+      msg.pkt.setSrc(src)
+      return msg.pkt
     }
   }
   return
