@@ -44,10 +44,10 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
     }
     struct sockaddr_in dst;
     memset(&dst, 0, sizeof(dst));
-    dst.sin_addr = inet_addr(dstaddr);
+    inet_aton(dstaddr, &dst.sin_addr);
     struct sockaddr_in src;
     memset(&src, 0, sizeof(src));
-    src.sin_addr = inet_addr(addr);
+    inet_aton(addr, &src.sin_addr);
     memcpy(&ifr.ifr_addr, &src, sizeof(src));
     memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
     if ( ioctl(fd, SIOCSIFADDR, &ifr) < 0 ) {
