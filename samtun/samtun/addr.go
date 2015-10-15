@@ -30,22 +30,21 @@ func (m addrMap) B32(ip string) string {
 // take a link message and filter the packets
 // return a link frame that has corrected addresses
 // returns nil if we have a packet from someone unmapped
-func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (frame linkFrame) {
+func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (pkt ipPacket) {
   dst := net.ParseIP(m.IP(ourAddr.Base32()))
   src := net.ParseIP(m.IP(msg.addr.Base32()))
   if dst == nil || src == nil {
     // bad address
-    frame = nil
+    pkt = nil
   } else {
-    for _, pkt := range msg.frame {
-      if pkt == nil || len(pkt) < 20 {
-        // back packet
-        log.Println("short packet from", src, len(pkt), "bytes")
-      } else {
-        pkt.setDst(dst)
-        pkt.setSrc(src)
-        frame = append(frame, pkt)
-      }
+    pkt = msg.pkt
+    if pkt == nil || len(pkt) < 20 {
+      // back packet
+      log.Println("short packet from", src, len(pkt), "bytes")
+      pkt = nil
+    } else {
+      pkt.setDst(dst)
+      pkt.setSrc(src)
     }
   }
   return

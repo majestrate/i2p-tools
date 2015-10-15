@@ -107,14 +107,7 @@ func Run() {
                 ip := conf.Map.IP(from.Base32())
                 if len(ip) > 0 {
                   // got from sam
-                  frame := frameFromBytes(pktbuff[:n])
-                  if frame == nil {
-                    // invalid frame D:
-                    log.Println("invalid frame from", from.Base32())
-                  } else {
-                    // valid frame
-                    sampkt_inchnl <- linkMessage{frame: frame, addr: from}
-                  }
+                  sampkt_inchnl <- linkMessage{pkt: pktbuff[:n], addr: from}
                 } else {
                   // unwarrented
                   log.Println("unwarrented packet from", from.Base32())
@@ -166,8 +159,7 @@ func Run() {
                     log.Println("tunpkt" , src, "to", dst, "aka", b32)
                     dest, ok := dest_cache[b32]
                     if ok {
-                      frame := linkFrame{pkt}
-                      _, err := dg.WriteTo(frame.Bytes(), dest)
+                      _, err := dg.WriteTo(pkt[:], dest)
                       if err == nil {
                         // we gud
                       } else {
@@ -194,21 +186,18 @@ func Run() {
             for {
               msg, ok := <- sampkt_inchnl
               if ok {
-                frame := conf.Map.filterMessage(msg, ourAddr)
-                if frame == nil {
+                pkt := conf.Map.filterMessage(msg, ourAddr)
+                if pkt == nil {
                   // invalid frame D:
                   log.Println("invalid frame from", msg.addr.Base32())
                 } else {
-                  for _ , pkt := range frame {
-                    log.Println("write tun", len(pkt))
-                    _, err := iface.Write(pkt)
-                    if err == nil {
-                      // we gud
-                    } else {
-                      log.Println("error writing to tun interface", err)
-                      done_chnl <- true
-                      return
-                    }
+                  _, err := iface.Write(pkt)
+                  if err == nil {
+                    // we gud
+                  } else {
+                    log.Println("error writing to tun interface", err)
+                    done_chnl <- true
+                    return
                   }
                 }
               } else {

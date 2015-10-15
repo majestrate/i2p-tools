@@ -81,18 +81,13 @@ func frameFromBytes(buff []byte) (f linkFrame) {
 
 // a link layer message that is sent over i2p
 type linkMessage struct {
-  frame linkFrame
+  pkt ipPacket
   addr sam3.I2PAddr
-}
-
-
-func (m *linkMessage) appendPacket(pkt ipPacket) {
-  m.frame = append(m.frame, pkt)
 }
 
 // get raw bytes representation to send over the wire
 func (m *linkMessage) WireBytes() []byte {
-  return m.frame.Bytes()
+  return m.pkt
 }
 
 type linkProtocol struct {
