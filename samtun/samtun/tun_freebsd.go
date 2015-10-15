@@ -37,7 +37,7 @@ int tundev_open(char * ifname) {
 int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
 
   struct ifreq ifr;
-  memset(&ifr, 0, sizeof(ifr));
+  memset(&ifr, 0, sizeof(struct ifreq));
   strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
   int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if ( fd > 0 ) {
@@ -46,6 +46,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
+    int idx = ifreq.ifr_ifindex;
     ifr.ifr_mtu = mtu;
     if ( ioctl(fd, SIOCSIFMTU, (void*) &ifr) < 0) {
       close(fd);
@@ -70,7 +71,9 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
+    memset(&ifr, 0, sizeof(struct ifreq));
     memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
+    ifr.ifr_ifindex = idx;
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCSIFADDR");
