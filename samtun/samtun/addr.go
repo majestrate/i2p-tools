@@ -40,7 +40,7 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (frame lin
     for _, pkt := range msg.frame {
       if pkt == nil || len(pkt) < 20 {
         // back packet
-        log.Println("short packet from", src)
+        log.Println("short packet from", src, len(pkt), "bytes")
       } else {
         pkt.setDst(dst)
         pkt.setSrc(src)
