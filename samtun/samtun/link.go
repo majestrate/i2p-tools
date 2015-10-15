@@ -4,7 +4,7 @@
 package samtun
 
 import (
-  "bitbucket.org/majestrate/sam3"
+  "github.com/majestrate/i2p-tools/sam3"
   "bytes"
   "encoding/binary"
   "net"
