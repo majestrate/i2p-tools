@@ -23,7 +23,7 @@ int tundev_open(char * ifname) {
   if (fd > 0) {
     struct ifreq ifr;
     memset(&ifr, 0, sizeof(ifr));
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    ifr.ifr_flags = IFF_POINTOPOINT;
     strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     if ( ioctl(fd , TUNSETIFF, (void*) &ifr) < 0) {
       close(fd);
