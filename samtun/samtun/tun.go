@@ -8,6 +8,10 @@ package samtun
 
 #include <linux/if.h>
 #include <linux/if_tun.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
