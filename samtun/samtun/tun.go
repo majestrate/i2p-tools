@@ -48,8 +48,8 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
     struct sockaddr_in src;
     memset(&src, 0, sizeof(src));
     src.sin_addr = inet_addr(addr);
-    memcpy(&ifr.ifr_addr, src, sizeof(src));
-    memcpy(&ifr.ifr_dstaddr, dst, sizeof(dst));
+    memcpy(&ifr.ifr_addr, &src, sizeof(src));
+    memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
     if ( ioctl(fd, SIOCSIFADDR, &ifr) < 0 ) {
       close(fd);
       return -1;
