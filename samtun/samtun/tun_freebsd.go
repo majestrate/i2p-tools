@@ -28,7 +28,6 @@ int tundev_open(char * ifname) {
   int fd = open(name, O_RDWR);
   if (fd > 0) {
     int i = 0;
-    ioctl(fd, TUNSLMODE, &i);
     ioctl(fd, TUNSIFHEAD, &i);
   }
   return fd;
