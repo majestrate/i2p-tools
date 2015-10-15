@@ -62,7 +62,7 @@ func (f linkFrame) Bytes() []byte {
 func frameFromBytes(buff []byte) (f linkFrame) {
   if buff[0] == 0x00 {
     pkts := buff[1]
-    idx := 0
+    idx := 2
     for pkts > 0 {
       plen := binary.BigEndian.Uint16(buff[:idx])
       if 2 + int(plen) + idx < len(buff) {
@@ -70,7 +70,7 @@ func frameFromBytes(buff []byte) (f linkFrame) {
         copy(pkt, buff[2:2+len(pkt)+idx])
         f = append(f, ipPacket(pkt))
         pkts--
-        idx += len(pkt)
+        idx += len(pkt) + 2
       } else {
         return nil
       }
