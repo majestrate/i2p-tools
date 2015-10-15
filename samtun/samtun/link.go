@@ -51,7 +51,7 @@ func (f linkFrame) Bytes() []byte {
     // pack the packet int our buffer
     pktbuff := make([]byte, len(pkt) + 2)
     binary.BigEndian.PutUint16(pktbuff[:], uint16(len(pkt)))
-    copy(pktbuff[:2], pkt)
+    copy(pktbuff[2:], pkt)
     buff.Write(pktbuff)
   }
   return buff.Bytes()
