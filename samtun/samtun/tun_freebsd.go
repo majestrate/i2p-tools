@@ -73,13 +73,6 @@ int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
       return -1;
     }
 
-    memcpy(&ifr.ifr_netmask, &mask, sizeof(struct sockaddr_in));
-    if ( ioctl(fd, SIOCSIFNETMASK, (void*) &ifr) < 0) {
-      close(fd);
-      perror("SIOCSIFNETMASK");
-      return -1;
-    }
-
     if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCGIFFLAGS");
