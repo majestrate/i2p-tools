@@ -105,12 +105,12 @@ func Run() {
               if err == nil {
                 // lookup ip from address map
                 ip := conf.Map.IP(from.Base32())
-                if len(ip) > 0 {
-                  // got from sam
-                  sampkt_inchnl <- linkMessage{pkt: pktbuff[:n], addr: from}
-                } else {
+                if ip == nil {
                   // unwarrented
                   log.Println("unwarrented packet from", from.Base32())
+                } else {
+                  // got from sam
+                  sampkt_inchnl <- linkMessage{pkt: pktbuff[:n], addr: from}
                 }
               } else {
                 log.Println("error while reading sam packet", err)
