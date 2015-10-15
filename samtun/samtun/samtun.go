@@ -1,7 +1,7 @@
 package samtun
 
 import (
-  "bitbucket.org/kallevedin/sam3"
+  "bitbucket.org/majestrate/sam3"
   "fmt"
   "io/ioutil"
   "log"
