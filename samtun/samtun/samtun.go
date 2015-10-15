@@ -145,21 +145,31 @@ func Run() {
               go func() {
                 for {
                   select {
-                  case pkt := <- tunpkt_inchnl:
-                    _, err := dg.WriteTo(pkt, remote_addr)
-                    if err == nil {
-                      // we gud
+                  case pkt, ok := <- tunpkt_inchnl:
+                    if ok {
+                      _, err := dg.WriteTo(pkt, remote_addr)
+                      if err == nil {
+                        // we gud
+                      } else {
+                        log.Println("error writing to remote destination", err)
+                        done_chnl <- true
+                        return
+                      }
                     } else {
-                      log.Println("error writing to remote destination", err)
                       done_chnl <- true
                       return
                     }
-                  case pkt := <- sampkt_inchnl:
-                    _, err := iface.Write(pkt)
-                    if err == nil {
-                      // we gud
+                  case pkt, ok := <- sampkt_inchnl:
+                    if ok {
+                      _, err := iface.Write(pkt)
+                      if err == nil {
+                        // we gud
+                      } else {
+                        log.Println("error writing to tun interface", err)
+                        done_chnl <- true
+                        return
+                      }
                     } else {
-                      log.Println("error writing to tun interface", err)
                       done_chnl <- true
                       return
                     }
