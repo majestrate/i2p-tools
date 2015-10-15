@@ -6,8 +6,6 @@ package samtun
 
 /*
 
-#include <linux/if.h>
-#include <linux/if_tun.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -16,6 +14,8 @@ package samtun
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <linux/if.h>
+#include <linux/if_tun.h>
 
 int tundev_open(char * ifname) {
   int fd = open("/dev/net/tun", O_RDWR);
