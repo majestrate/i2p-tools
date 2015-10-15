@@ -46,7 +46,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
-    int idx = ifreq.ifr_index;
+    int idx = ifr.ifr_index;
     ifr.ifr_mtu = mtu;
     if ( ioctl(fd, SIOCSIFMTU, (void*) &ifr) < 0) {
       close(fd);
