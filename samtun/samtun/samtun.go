@@ -124,20 +124,22 @@ func Run() {
 
               // read packets from sam
               go func() {
-                pktbuff := make([]byte, mtu+8)
-                n, from, err := dg.ReadFrom(pktbuff)
-                if err == nil {
-                  if from.Base32() == remote_addr.Base32() {
+                for {
+                  pktbuff := make([]byte, mtu+8)
+                  n, from, err := dg.ReadFrom(pktbuff)
+                  if err == nil {
+                    if from.Base32() == remote_addr.Base32() {
                     // got packet from sam
-                    sampkt_inchnl <- pktbuff[:n]
+                      sampkt_inchnl <- pktbuff[:n]
+                    } else {
+                      // unwarrented
+                      log.Println("unwarrented packet from", from.Base32())
+                    }
                   } else {
-                  // unwarrented
-                    log.Println("unwarrented packet from", from.Base32())
+                    log.Println("error while reading sam packet", err)
+                    close(sampkt_inchnl)
+                    return
                   }
-                } else {
-                  log.Println("error while reading sam packet", err)
-                  close(sampkt_inchnl)
-                  return
                 }
               }()
               done_chnl := make(chan bool)
@@ -146,6 +148,7 @@ func Run() {
                   select {
                   case pkt, ok := <- tunpkt_inchnl:
                     if ok {
+                      log.Println("write sam", len(pkt))
                       _, err := dg.WriteTo(pkt, remote_addr)
                       if err == nil {
                         // we gud
@@ -160,6 +163,7 @@ func Run() {
                     }
                   case pkt, ok := <- sampkt_inchnl:
                     if ok {
+                      log.Println("write tun", len(pkt))
                       _, err := iface.Write(pkt)
                       if err == nil {
                         // we gud
