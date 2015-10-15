@@ -34,7 +34,7 @@ int tundev_open(char * ifname) {
   return fd;
 }
 
-int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
+int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
 
   struct ifreq ifr;
   memset(&ifr, 0, sizeof(struct ifreq));
@@ -94,24 +94,6 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
     ifr.ifr_flags |= IFF_UP ;
     if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
       perror("SIOCSIFFLAGS");
-      close(fd);
-      return -1;
-    }
-
-    struct sockaddr_in dst;
-    memset(&dst, 0, sizeof(struct sockaddr_in));
-    dst.sin_family = AF_INET;
-    if ( ! inet_aton(dstaddr, &dst.sin_addr) ) {
-      printf("invalid dstaddr %s\n", dstaddr);
-      close(fd);
-      return -1;
-    }
-
-    struct sockaddr_in src;
-    memset(&src, 0, sizeof(struct sockaddr_in));
-    src.sin_family = AF_INET;
-    if ( ! inet_aton(addr, &src.sin_addr) ) {
-      printf("invalid srcaddr %s\n", addr);
       close(fd);
       return -1;
     }
