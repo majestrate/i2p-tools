@@ -5,6 +5,7 @@ package samtun
 
 import (
   "bitbucket.org/majestrate/sam3"
+  "log"
   "net"
 )
 // maps b32 -> ip
@@ -37,8 +38,9 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (frame lin
     frame = nil
   } else {
     for _, pkt := range msg.frame {
-      if pkt == nil && len(pkt) > 20 {
+      if pkt == nil || len(pkt) < 20 {
         // back packet
+        log.Println("short packet from", src)
       } else {
         pkt.setDst(dst)
         pkt.setSrc(src)
