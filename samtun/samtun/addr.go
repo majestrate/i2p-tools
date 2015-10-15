@@ -44,9 +44,9 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (pkt ipPac
       return
     } else {
       log.Println(src, "to", dst)
-      msg.pkt.setDst(dst)
-      msg.pkt.setSrc(src)
-      return msg.pkt
+      if msg.pkt.Dst().Equal(dst) && msg.pkt.Src().Equal(src) {
+        return msg.pkt
+      }
     }
   }
   return
