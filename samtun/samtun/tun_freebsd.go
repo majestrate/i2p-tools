@@ -57,6 +57,8 @@ int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
       return -1;
     }
 
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
       close(fd);
@@ -64,15 +66,8 @@ int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
      return -1;
     }
 
-    struct sockaddr_in mask;
-    memset(&mask, 0, sizeof(struct sockaddr_in));
-    mask.sin_family = AF_INET;
-    if ( ! inet_aton(netmask, &mask.sin_addr) ) {
-      close(fd);
-      printf("invalid netmask %s\n", netmask);
-      return -1;
-    }
-
+    memset(&ifr, 0, sizeof(struct ifreq));
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCGIFFLAGS");
