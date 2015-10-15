@@ -17,6 +17,7 @@ package samtun
 #include <sys/types.h>
 #include <net/if.h>
 #include <net/if_tun.h>
+#include <stdio.h>
 
 int tundev_open(char * ifname) {
   if (strlen(ifname) > IFNAMSIZ) {
