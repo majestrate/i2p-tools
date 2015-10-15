@@ -59,7 +59,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       perror("SIOCGIFFLAGS");
       return -1;
     }
-    ifr.ifr_flags |= IFF_UP | IFF_RUNNING;
+    ifr.ifr_flags |= IFF_UP | IFF_RUNNING | IFF_POINTOPOINT;
     if ( ioctl(fd, SIOCSIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       return -1;
@@ -82,7 +82,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
-    ifr.ifr_index = idx;
+
     memcpy(&ifr.ifr_addr, &src, sizeof(struct sockaddr_in));
     if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
       close(fd);
