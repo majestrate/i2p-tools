@@ -38,7 +38,7 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
   struct ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
   strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
-  int fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_IP);
+  int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if ( fd > 0 ) {
     if ( ioctl(fd, SIOCGIFINDEX, (void*) &ifr) < 0 ) {
       perror("SIOCGIFINDEX");
@@ -51,6 +51,19 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       perror("SIOCSIFMTU");
       return -1;
     }
+    struct sockaddr_in dst;
+    memset(&dst, 0, sizeof(dst));
+    inet_aton(dstaddr, &dst.sin_addr);
+    struct sockaddr_in src;
+    memset(&src, 0, sizeof(src));
+    inet_aton(addr, &src.sin_addr);
+    memcpy(&ifr.ifr_addr, &src, sizeof(src));
+    memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
+    if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
+      close(fd);
+      perror("SIOCSIFADDR");
+     return -1;
+    }
     if ( ioctl(fd, SIOCGIFFLAGS, (void*)&ifr) < 0 ) {
       close(fd);
       perror("SIOCGIFFLAGS");
@@ -61,20 +74,6 @@ int tundev_up(char * ifname, char * addr, char * dstaddr, int mtu) {
       close(fd);
       return -1;
     }
-    //struct sockaddr_in dst;
-    //memset(&dst, 0, sizeof(dst));
-    //inet_aton(dstaddr, &dst.sin_addr);
-    //struct sockaddr_in src;
-    //memset(&src, 0, sizeof(src));
-    //inet_aton(addr, &src.sin_addr);
-    //memcpy(&ifr.ifr_addr, &src, sizeof(src));
-    //memcpy(&ifr.ifr_dstaddr, &dst, sizeof(dst));
-    //if ( ioctl(fd, SIOCSIFADDR, (void*)&ifr) < 0 ) {
-    //  close(fd);
-    //  perror("SIOCSIFADDR");
-    // return -1;
-    //}
-
     close(fd);
     return 0;
   } 
