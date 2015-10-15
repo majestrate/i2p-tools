@@ -51,8 +51,6 @@ func Run() {
       localaddr := conf["srcaddr"]
       remoteaddr := conf["dstaddr"]
       mtu, err := strconv.ParseInt(mtu_str, 10, 32)
-      iface, err := newTun(ifname, localaddr, remoteaddr, int(mtu))
-      defer iface.Close()
       if err == nil {
         log.Println("connecting to", samaddr)
         sam, err := sam3.NewSAM(samaddr)
@@ -77,8 +75,12 @@ func Run() {
             log.Println("creating session")
             dg, err := sam.NewDatagramSession(session, keys, sam3.Options_Fat, 0)
             if err == nil {
-              our_addr := sam3.I2PAddr(pubkey)
-              log.Println("we are", our_addr.Base32())
+              addr, err := sam.Lookup("ME")
+              if err != nil {
+                log.Println("failed to lookup our own destination")
+                return
+              }
+              log.Println("we are", addr.Base32())
               // look up remote destination
               for {
                 if len(remote) == 0 {
@@ -96,6 +98,9 @@ func Run() {
                 }
                 time.Sleep(time.Second)
               }
+              log.Println("open", ifname)
+              iface, err := newTun(ifname, localaddr, remoteaddr, int(mtu))
+              defer iface.Close()
               for {
                 select {
                 }
