@@ -6,14 +6,8 @@ package samtun
 
 /*
 
-#ifdef __linux__
 #include <linux/if.h>
 #include <linux/if_tun.h>
-#else
-#include <net/if.h>
-#include <net/if_tun.h>
-#endif
-
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
