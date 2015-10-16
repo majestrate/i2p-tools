@@ -103,7 +103,7 @@ type tunDev struct {
 func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
   fd := C.tundev_open(C.CString(ifname))
   
-  if fd == -1 {
+  if fd == C.int(-1) {
     err = errors.New("cannot open tun interface")
   } else {
     if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
