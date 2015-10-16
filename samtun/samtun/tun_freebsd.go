@@ -34,7 +34,7 @@ char * tundev_open(int * tunfd) {
       if ( ioctl(fd, TUNSIFHEAD, &i) < 0 ) {
         close(fd);
         perror("TUNSIFHEAD");
-        return -1;
+        break;
       }
       *tunfd = fd;
       break;
