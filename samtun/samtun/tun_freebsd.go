@@ -100,6 +100,12 @@ void tundev_close(int fd) {
   close(fd);
 }
 
+void tundev_free(const char * name) {
+  if (name) {
+    free((void*)name);
+  }
+}
+
 */
 import "C"
 
@@ -121,7 +127,7 @@ func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
       err = errors.New("cannot put up interface")
     }
   }
-  C.free(name)
+  C.tundev_free(name)
   return
 }
 
