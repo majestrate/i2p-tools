@@ -18,6 +18,7 @@ package samtun
 #include <net/if.h>
 #include <net/if_tun.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 const char * tundev_open(int * tunfd) {
 
