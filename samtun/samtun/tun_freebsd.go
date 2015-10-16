@@ -123,8 +123,10 @@ func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
   if t.fd == C.int(-1) {
     err = errors.New("cannot open tun interface")
   } else {
-    if C.tundev_up(name, C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
+    res := C.tundev_up(name, C.CString(addr), C.CString(dstaddr), C.int(mtu))
+    if res == C.int(-1) {
       err = errors.New("cannot put up interface")
+      t.Close()
     }
   }
   C.tundev_free(name)
@@ -142,5 +144,5 @@ func (t *tunDev) Write(d []byte) (n int, err error) {
 
 
 func (t *tunDev) Close() {
-  C.tundev_close(C.int(t.fd))
+  C.tundev_close(t.fd)
 }
