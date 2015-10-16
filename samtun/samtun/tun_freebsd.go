@@ -19,18 +19,28 @@ package samtun
 #include <net/if_tun.h>
 #include <stdio.h>
 
-int tundev_open(char * ifname) {
-  if (strlen(ifname) > IFNAMSIZ) {
-    return -1;
-  }
-  char name[IFNAMSIZ];
-  sprintf(name, "/dev/%s", ifname);
-  int fd = open(name, O_RDWR);
-  if (fd > 0) {
-    int i = 0;
-    ioctl(fd, TUNSIFHEAD, &i);
-  }
-  return fd;
+const char * tundev_open(int * tunfd) {
+
+  const char * name = (const char *) malloc(IFNAMSIZ);
+  int tun = 0;
+  *tunfd = -1;
+  do {
+    memset(name, 0, IFNAMSIZ);
+    sprintf(name, "/dev/tun%s", tun);
+    int fd = open(name, O_RDWR);
+    if (fd > 0) {
+      int i = 0;
+      if ( ioctl(fd, TUNSIFHEAD, &i) < 0 ) {
+        close(fd);
+        perror("TUNSIFHEAD");
+        return -1;
+      }
+      *tunfd = fd;
+      break;
+    }
+    tun ++;
+  } while(tun < 10);
+  return name;
 }
 
 int tundev_up(char * ifname, char * addr, char * netmask, int mtu) {
@@ -101,17 +111,16 @@ type tunDev struct {
 }
 
 func newTun(ifname, addr, dstaddr string, mtu int) (t tunDev, err error) {
-  fd := C.tundev_open(C.CString(ifname))
+  name := C.tundev_open(&t.fd)
   
-  if fd == C.int(-1) {
+  if t.fd == C.int(-1) {
     err = errors.New("cannot open tun interface")
   } else {
-    if C.tundev_up(C.CString(ifname), C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
+    if C.tundev_up(name, C.CString(addr), C.CString(dstaddr), C.int(mtu)) < C.int(0) {
       err = errors.New("cannot put up interface")
-    } else {
-      t = tunDev{fd}
     }
   }
+  C.free(name)
   return
 }
 
