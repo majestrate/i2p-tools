@@ -27,7 +27,7 @@ char * tundev_open(int * tunfd) {
   *tunfd = -1;
   do {
     memset(name, 0, IFNAMSIZ);
-    sprintf(name, "/dev/tun%s", tun);
+    sprintf(name, "/dev/tun%d", tun);
     int fd = open(name, O_RDWR);
     if (fd > 0) {
       int i = 0;
