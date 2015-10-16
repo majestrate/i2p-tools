@@ -22,7 +22,7 @@ package samtun
 
 char * tundev_open(int * tunfd) {
 
-  char * name = (const char *) malloc(IFNAMSIZ);
+  char * name = (char *) malloc(IFNAMSIZ);
   int tun = 0;
   *tunfd = -1;
   do {
