@@ -25,7 +25,7 @@ func Run() {
   if len(os.Args) > 1 {
     if os.Args[1] == "-h" || os.Args[1] == "--help" {
       // print usage and return
-      fmt.Fprintf(os.Stdout, "usage: %s [config.json]\n")
+      fmt.Fprintf(os.Stdout, "usage: %s [config.json]\n", os.Args[0])
       return
     } else {
       fname = os.Args[1]
