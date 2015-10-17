@@ -4,6 +4,7 @@
 package samtun
 
 import (
+  "bytes"
   "encoding/json"
   "io/ioutil"
 )
@@ -23,7 +24,11 @@ func (conf *jsonConfig) Save(fname string) (err error) {
   var data []byte
   data, err = json.Marshal(conf)
   if err == nil {
-    err = ioutil.WriteFile(fname, data, 0600)
+    var buff bytes.Buffer
+    err = json.Indent(&buff, data, " ", "  ")
+    if err == nil {
+      err = ioutil.WriteFile(fname, buff.Bytes(), 0600)
+    }
   }
   return
 }
