@@ -86,6 +86,9 @@ func Run() {
             }
             log.Println("we are", ourAddr.Base32())
             iface, err := newTun(conf.Ifname, ip.String(), conf.Netmask, conf.MTU)
+            if err != nil {
+              log.Fatalf("failed to create network interface %s", err.Error())
+            }
             defer iface.Close()
             tunpkt_inchnl := make(chan []byte)
             //tunpkt_outchnl := make(chan []byte)
