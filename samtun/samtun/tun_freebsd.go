@@ -4,6 +4,8 @@
 
 package samtun
 
+// this is currently broken D:
+
 /*
 
 #include <string.h>

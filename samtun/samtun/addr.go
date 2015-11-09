@@ -4,8 +4,11 @@
 package samtun
 
 import (
+  "bytes"
+  "encoding/json"
   "github.com/majestrate/i2p-tools/sam3"
   "log"
+  "io/ioutil"
   "net"
 )
 // maps b32 -> ip range
@@ -52,6 +55,29 @@ func (m addrMap) filterMessage(msg linkMessage, ourAddr sam3.I2PAddr) (pkt ipPac
         return msg.pkt
       }
     }
+  }
+  return
+}
+
+func saveAddrMap(fname string, amap addrMap) (err error) {
+  var data []byte
+  data, err = json.Marshal(amap)
+  if err == nil {
+    var buff bytes.Buffer
+    err = json.Indent(&buff, data, " ", "  ")
+    if err == nil {
+      err = ioutil.WriteFile(fname, buff.Bytes(), 0600)
+    }
+  }
+  return
+}
+
+func loadAddrMap(fname string) (amap addrMap, err error) {
+  var data []byte
+  data, err = ioutil.ReadFile(fname)
+  if err == nil {
+    amap = make(addrMap)
+    err = json.Unmarshal(data, &amap)
   }
   return
 }
