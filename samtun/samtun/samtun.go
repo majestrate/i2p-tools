@@ -75,7 +75,19 @@ func Run() {
           keys := sam3.NewKeys(sam3.I2PAddr(pubkey), privkey)
           // create our datagram session
           log.Println("creating session")
-          dg, err := sam.NewDatagramSession(conf.Session, keys, sam3.Options_Fat, 0)
+
+          var opts []string
+
+          // set up sam options
+          if conf.SamOpts == nil {
+            opts = sam3.Options_Small
+          } else {
+            for k, v := range conf.SamOpts {
+              opts = append(opts, fmt.Sprintf("%s=%s", k, v))
+            }
+          }
+          
+          dg, err := sam.NewDatagramSession(conf.Session, keys, opts, 0)
           defer dg.Close()
           if err == nil {
             log.Println("session made")

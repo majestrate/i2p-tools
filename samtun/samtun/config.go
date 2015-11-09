@@ -9,9 +9,12 @@ import (
   "io/ioutil"
 )
 
+type samOpts map[string]string
+
 type jsonConfig struct {
   Keyfile string
   Sam string
+  SamOpts samOpts
   Addr string
   Ifname string
   Session string
@@ -43,6 +46,14 @@ func genConfig(fname string) (cfg jsonConfig) {
   cfg.Netmask = "255.255.0.0"
   cfg.Session = "samtun"
   cfg.MapFile = "network.json"
+  cfg.SamOpts = make(samOpts)
+  
+  cfg.SamOpts["inbound.backupQuantity"] = "1"
+  cfg.SamOpts["inbound.quantity"] = "1"
+  cfg.SamOpts["inbound.length"] = "3"
+  cfg.SamOpts["outbound.backupQuantity"] = "1"
+  cfg.SamOpts["outbound.quantity"] = "1"
+  cfg.SamOpts["outbound.length"] = "3"
   return
 }
 
