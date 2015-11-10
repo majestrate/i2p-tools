@@ -15,22 +15,31 @@ def main():
         parts = v.split('|')
         count, timeout, lost, mrtt, artt = int(parts[0]), int(parts[1]), int(parts[2]), float(parts[3]), float(parts[4])
         # add entry
-        samples.append((start, artt))
+        samples.append((start, artt, mrtt, lost))
 
     s = sorted(samples, cmp=lambda x, y: cmp(x[0], y[0]))
     graphit(s)
     
 def graphit(data):
 
-    t, l = list(), list()
-    for a,b in data:
+    t, mean, mx, lost = list(), list(), list(), list()
+    for a,b,c,d in data:
         t.append(a)
-        l.append(b)
-    # the histogram of the data
-    plt.bar(t, l, facecolor='green', alpha=0.5)
-    plt.xlabel('Time')
-    plt.ylabel('latency')
-    plt.title('i2p latency graph')
+        mean.append(b)
+        mx.append(c)
+        lost.append(d / 10.0)
+
+    plt.figure(1)
+    plt.subplot(2, 1, 1) 
+    plt.title('i2p reliabilty graph')
+    plt.plot(t, lost)
+    plt.xlabel('time')
+    plt.ylabel('packet drop')
+    plt.subplot(2, 1, 2) 
+    plt.plot(t, mean)
+    plt.plot(t, mx)
+    plt.xlabel('time')
+    plt.ylabel('latency (ms)')
     plt.savefig('latency.png')
                
 
