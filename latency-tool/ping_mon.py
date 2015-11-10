@@ -275,8 +275,12 @@ def main():
     db = bsddb.hashopen('latency.db')
     while True:
         now = int(time.time())
-        lost, mrtt, artt = quiet_ping(remote, timeout=60, count=10)
-        db['{}'.format(now)] = '{}|{}|{}'.format(lost,mrtt,artt)
+        count, timeout = 10, 30
+        # do ping
+        lost, mrtt, artt = quiet_ping(remote, timeout=timeout, count=count)
+        end = int(time.time())
+        # save data point
+        db['{}|{}|{}'.format(remote, now, end)] = '{}|{}|{}|{}|{}'.format(count, timeout, lost, mrtt, artt)
         db.sync()
         
 if __name__ == "__main__":
