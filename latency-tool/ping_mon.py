@@ -275,7 +275,7 @@ def main():
     db = bsddb.hashopen('latency.db')
     while True:
         now = int(time.time())
-        lost, mrtt, artt = quiet_ping(remote, timeout=10, count=10)
+        lost, mrtt, artt = quiet_ping(remote, timeout=60, count=10)
         db['{}'.format(now)] = '{}|{}|{}'.format(lost,mrtt,artt)
         db.sync()
         
