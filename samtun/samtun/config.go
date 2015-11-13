@@ -42,7 +42,7 @@ func genConfig(fname string) (cfg jsonConfig) {
   cfg.Sam = "127.0.0.1:7656"
   cfg.Ifname = "i2p0"
   cfg.MTU = 8192
-  cfg.Addr = "10.2.0.1/32"
+  cfg.Addr = "10.10.0.1/32"
   cfg.Netmask = "255.255.0.0"
   cfg.Session = "samtun"
   cfg.MapFile = "network.json"

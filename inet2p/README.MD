@@ -28,3 +28,5 @@ build via clearnet:
     torify git clone https://github.com/majestrate/i2p-tools
     cd i2p-tools/inet2p
 	./build.sh
+
+
