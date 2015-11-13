@@ -56,6 +56,10 @@ func Run() {
         keys, err = sam.NewKeys()
         log.Println("we are", keys.Addr().Base32())
         ioutil.WriteFile(conf.Keyfile, []byte(keys.String()+" "+keys.Addr().String()), 0600)
+        // load addr map if it is there
+        if checkfile(conf.MapFile) {
+          Map, _ = loadAddrMap(conf.MapFile)
+        }
         b32 := keys.Addr().Base32()
         Map[b32] = conf.Addr
         err = saveAddrMap(conf.MapFile, Map)
