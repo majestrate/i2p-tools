@@ -21,12 +21,15 @@ func checkfile(fname string) bool {
 func Run() {
   // defaults
   fname := "samtun.json"
-
+  only_print_dest := false
   if len(os.Args) > 1 {
     if os.Args[1] == "-h" || os.Args[1] == "--help" {
       // print usage and return
       fmt.Fprintf(os.Stdout, "usage: %s [config.json]\n", os.Args[0])
       return
+    } else if os.Args[1] == "--dest" {
+      // print out destination
+      only_print_dest = true
     } else {
       fname = os.Args[1]
     }
@@ -54,7 +57,6 @@ func Run() {
         // we have not generated private keys yet
         log.Println("generating keys")
         keys, err = sam.NewKeys()
-        log.Println("we are", keys.Addr().Base32())
         ioutil.WriteFile(conf.Keyfile, []byte(keys.String()+" "+keys.Addr().String()), 0600)
         // load addr map if it is there
         if checkfile(conf.MapFile) {
@@ -77,6 +79,10 @@ func Run() {
           privkey := strings.Split(key_str, " ")[0]
           pubkey := strings.Split(key_str, " ")[1]
           keys := sam3.NewKeys(sam3.I2PAddr(pubkey), privkey)
+          log.Println("our destination is", keys.Addr().Base32())
+          if only_print_dest {
+            return
+          }
           // create our datagram session
           log.Println("creating session")
 

@@ -1,10 +1,10 @@
-## Inet2P
+# Inet2P
 
 This repo contains all resources to join Inet2P
 
-### What is Inet2P?
+## What is Inet2P?
 
-Inet2P is an anonymous fullmesh IP network inside i2p.
+Inet2P is an anonymous IP network inside i2p.
 
 Currently Inet2P uses the 10.10.0.0/16 address range. This may change.
 
@@ -30,3 +30,14 @@ build via clearnet:
 	./build.sh
 
 
+### Joining the network
+
+Add your destination and address to network.json and submit a pull request
+
+This entry would be the equivilent of saying ``"my destination is ne7d5elzpibgkk5qclusteavp5hc7avbl4p3yjtbjm5h4zkr2qvq.b32.i2p and I claim the address 10.10.55.6"``
+
+
+    "ne7d5elzpibgkk5qclusteavp5hc7avbl4p3yjtbjm5h4zkr2qvq.b32.i2p": 10.10.55.6/32,
+
+
+Currently whenever a change is made to network.json everyone must update their copy for it to have a global effect, this probably will change in the future.
