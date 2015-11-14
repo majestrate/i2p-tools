@@ -63,7 +63,7 @@ func Run() {
           Map, _ = loadAddrMap(conf.MapFile)
         }
         b32 := keys.Addr().Base32()
-        Map[b32] = conf.Addr
+        Map[b32] = []string{conf.Addr,}
         err = saveAddrMap(conf.MapFile, Map)
         if err != nil {
           log.Println("failed to save address map", err)
@@ -137,13 +137,12 @@ func Run() {
                 n, from, err := dg.ReadFrom(pktbuff)
                 if err == nil {
                   // lookup ip from address map
-                  ip := Map.IP(from.Base32())
-                  if ip == nil {
-                    // unwarrented
-                    log.Println("unwarrented packet from", from.Base32())
-                  } else {
+                  if Map.AllowDest(from.Base32()) {
                     // got from sam
                     sampkt_inchnl <- linkMessage{pkt: pktbuff[:n], addr: from}
+                  } else {
+                    // unwarrented
+                    log.Println("unwarrented packet from", from.Base32())
                   }
                 } else {
                   log.Println("error while reading sam packet", err)
