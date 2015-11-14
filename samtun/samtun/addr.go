@@ -17,12 +17,11 @@ type addrMap map[string][]string
 type addrList []*net.IPNet
 
 // given ip get b32
-func (m addrMap) B32(ip string) string {
-  i := net.ParseIP(ip)
+func (m addrMap) B32(ip net.IP) string {
   for k, ranges := range m {
     for _, r := range ranges {
       _, cidr, err := net.ParseCIDR(r)
-      if err == nil && cidr.Contains(i) {
+      if err == nil && cidr.Contains(ip) {
         return k
       }
     }

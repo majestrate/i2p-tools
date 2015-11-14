@@ -183,7 +183,7 @@ func Run() {
                   if ok {
                     pkt := ipPacket(data)
                     dst := pkt.Dst()
-                    b32 := Map.B32(dst.String())
+                    b32 := Map.B32(dst)
                     if len(b32) == 0 {
                       log.Println("cannot send packet to", dst, "unknown endpoint")
                     } else {
