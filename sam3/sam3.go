@@ -62,7 +62,7 @@ func (sam *SAM) EnsureKeyfile(fname string) (keys I2PKeys, err error) {
             sam.keys = &keys
             // save keys
             var f io.WriteCloser
-            f, err = os.OpenFile(fname, os.O_WRONLY, 0600)
+            f, err = os.OpenFile(fname, os.O_WRONLY | os.O_CREATE, 0600)
             if err == nil {
                 err = StoreKeysIncompat(keys, f)
                 f.Close()
