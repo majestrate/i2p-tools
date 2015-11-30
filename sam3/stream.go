@@ -150,8 +150,12 @@ type StreamListener struct {
 
 const defaultListenReadLen = 516
 
+func (l *StreamListener) Accept() (net.Conn, error) {
+    return l.accept()
+}
+
 // Accepts incomming connections to your StreamSession tunnel. Implements net.Listener
-func (l *StreamListener) Accept() (*SAMConn, error) {
+func (l *StreamListener) accept() (*SAMConn, error) {
 	conn, err := l.listener.Accept()
 	if err != nil {
 		return nil, err

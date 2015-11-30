@@ -29,13 +29,21 @@ func (sc SAMConn) Close() error {
 	return sc.conn.Close()
 }
 
-// Implements net.Conn
-func (sc SAMConn) LocalAddr() I2PAddr {
-	return sc.laddr
+func (sc SAMConn) LocalAddr() net.Addr {
+    return sc.localAddr()
 }
 
 // Implements net.Conn
-func (sc SAMConn) RemoteAddr() I2PAddr {
+func (sc SAMConn) localAddr() I2PAddr {
+	return sc.laddr
+}
+
+func (sc SAMConn) RemoteAddr() net.Addr {
+    return sc.remoteAddr()
+}
+
+// Implements net.Conn
+func (sc SAMConn) remoteAddr() I2PAddr {
 	return sc.raddr
 }
 
