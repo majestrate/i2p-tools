@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"net"
 	"errors"
+    "io"
+    "os"
 	"strings"
 )
 
@@ -15,6 +17,7 @@ import (
 type SAM struct {
 	address     string        // ipv4:port
 	conn        net.Conn
+    keys        *I2PKeys
 }
 
 const (
@@ -40,12 +43,45 @@ func NewSAM(address string) (*SAM, error) {
 		return nil, err
 	}
 	if string(buf[:n]) == "HELLO REPLY RESULT=OK VERSION=3.0\n" {
-		return &SAM{address, conn}, nil
+		return &SAM{address, conn, nil}, nil
 	} else if string(buf[:n]) == "HELLO REPLY RESULT=NOVERSION\n" {
 		return nil, errors.New("That SAM bridge does not support SAMv3.")
 	} else {
 		return nil, errors.New(string(buf[:n]))
 	}
+}
+
+// if keyfile fname does not exist
+func (sam *SAM) EnsureKeyfile(fname string) (err error) {
+
+    _, err = os.Stat(fname) 
+    if os.IsNotExist(err) {
+        // make the keys
+        var keys I2PKeys
+        keys, err = sam.NewKeys()
+        if err == nil {
+            sam.keys = &keys
+            // save keys
+            var f io.WriteCloser
+            f, err = os.OpenFile(fname, os.O_WRONLY, 0600)
+            if err == nil {
+                err = StoreKeysIncompat(keys, f)
+                f.Close()
+            }
+        }        
+    } else if err == nil {
+        // we haz key file
+        var f *os.File
+        var keys I2PKeys
+        f, err = os.Open(fname)
+        if err == nil {
+            keys, err = LoadKeysIncompat(f)
+            if err == nil {
+                sam.keys = &keys
+            }
+        }
+    }
+    return
 }
 
 // Creates the I2P-equivalent of an IP address, that is unique and only the one

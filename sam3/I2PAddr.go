@@ -1,10 +1,13 @@
 package sam3
 
 import (
+    "bytes"
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/base64"
 	"errors"
+    "io"
+    "strings"
 )
 
 
@@ -31,6 +34,23 @@ func NewKeys(addr I2PAddr, both string) I2PKeys {
 	return I2PKeys{addr, both}
 }
 
+// load keys from non standard format
+func LoadKeysIncompat(r io.Reader) (k I2PKeys, err error) {
+    var buff bytes.Buffer
+    _, err = io.Copy(&buff, r)
+    if err == nil {
+        parts := strings.Split(buff.String(), "\n")
+        k = I2PKeys{I2PAddr(parts[0]), parts[1]}
+    }
+    return 
+}
+
+// store keys in non standard format
+func StoreKeysIncompat(k I2PKeys, w io.Writer) (err error) {
+    _, err = io.WriteString(w, k.addr.Base64()+"\n"+k.both)
+    return
+}
+    
 // Returns the public keys of the I2PKeys.
 func (k I2PKeys) Addr() I2PAddr {
 	return k.addr
@@ -47,6 +67,28 @@ func (k I2PKeys) String() string {
 // really is just a pair of public keys and also maybe a certificate. (I2P hides
 // the details of exactly what it is. Read the I2P specifications for more info.)
 type I2PAddr string
+
+// an i2p destination hash, the .b32.i2p address if you will
+type I2PDestHash [32]byte
+
+// create a desthash from a string b32.i2p address
+func DestHashFromString(str string) (dhash I2PDestHash, err error) {
+    if strings.HasSuffix(str, ".b32.i2p") && len(str) == 60 {
+        // valid
+        _, err = i2pB32enc.Decode(dhash[:], []byte(str[:52]+"===="))
+    } else {
+        // invalid
+        err = errors.New("invalid desthash format")
+    }
+    return
+}
+
+// get string representation of i2p dest hash
+func (h I2PDestHash) String() string {
+	b32addr := make([]byte, 56)
+	i2pB32enc.Encode(b32addr, h[:])
+	return string(b32addr[:52]) + ".b32.i2p"
+}
 
 // Returns the base64 representation of the I2PAddr
 func (a I2PAddr) Base64() string {
@@ -66,6 +108,13 @@ func (a I2PAddr) Network() string {
 // Creates a new I2P address from a base64-encoded string. Checks if the address
 // addr is in correct format. (If you know for sure it is, use I2PAddr(addr).)
 func NewI2PAddrFromString(addr string) (I2PAddr, error) {
+    if strings.HasSuffix(addr, ".i2p") {
+        if strings.HasSuffix(addr, ".b32.i2p") {
+            return I2PAddr(""), errors.New("cannot convert .b32.i2p to full destination")
+        }
+        // strip off .i2p if it's there 
+        addr = addr[:len(addr)-4]
+    }
 	// very basic check
 	if len(addr) > 4096 || len(addr) < 516 {
 		return I2PAddr(""), errors.New("Not an I2P address")
@@ -102,14 +151,17 @@ func (addr I2PAddr) ToBytes() ([]byte, error) {
 // not possible to turn the base32-address back into a usable I2PAddr without 
 // performing a Lookup(). Lookup only works if you are using the I2PAddr from
 // which the b32 address was generated.
-func (addr I2PAddr) Base32() string {
+func (addr I2PAddr) Base32() (str string) {
+    return addr.DestHash().String()
+}
+
+func (addr I2PAddr) DestHash() (h I2PDestHash) {
 	hash := sha256.New()
 	b, _ := addr.ToBytes()
 	hash.Write(b)
 	digest := hash.Sum(nil)
-	b32addr := make([]byte, 56)
-	i2pB32enc.Encode(b32addr, digest)
-	return string(b32addr[:52]) + ".b32.i2p"
+    copy(h[:], digest)
+    return
 }
 
 // Makes any string into a *.b32.i2p human-readable I2P address. This makes no
