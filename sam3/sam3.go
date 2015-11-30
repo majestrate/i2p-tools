@@ -52,12 +52,11 @@ func NewSAM(address string) (*SAM, error) {
 }
 
 // if keyfile fname does not exist
-func (sam *SAM) EnsureKeyfile(fname string) (err error) {
+func (sam *SAM) EnsureKeyfile(fname string) (keys I2PKeys, err error) {
 
     _, err = os.Stat(fname) 
     if os.IsNotExist(err) {
         // make the keys
-        var keys I2PKeys
         keys, err = sam.NewKeys()
         if err == nil {
             sam.keys = &keys
@@ -72,7 +71,6 @@ func (sam *SAM) EnsureKeyfile(fname string) (err error) {
     } else if err == nil {
         // we haz key file
         var f *os.File
-        var keys I2PKeys
         f, err = os.Open(fname)
         if err == nil {
             keys, err = LoadKeysIncompat(f)
