@@ -163,7 +163,7 @@ func (sam *SAM) newGenericSession(style, id string, keys I2PKeys, options []stri
 
 	optStr := ""
 	for _, opt := range options {
-		optStr += "OPTION=" + opt + " "
+		optStr += opt + " "
 	}
 	
 	conn := sam.conn

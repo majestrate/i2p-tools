@@ -11,7 +11,7 @@ import (
 
 // Represents a streaming session.
 type StreamSession struct {
-    samAddr     string             // address to the sam bridge (ipv4:port)
+  samAddr     string             // address to the sam bridge (ipv4:port)
 	id          string             // tunnel name
 	conn        net.Conn           // connection to sam bridge
 	keys        I2PKeys            // i2p destination keys
@@ -88,7 +88,7 @@ func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 // Returns a listener for the I2P destination (I2PAddr) associated with the
 // StreamSession.
 func (s *StreamSession) Listen() (*StreamListener, error) {
-	sam, err := NewSAM(s.conn.RemoteAddr().String())
+	sam, err := NewSAM(s.samAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -103,16 +103,15 @@ func (s *StreamSession) Listen() (*StreamListener, error) {
 		sam.Close()
 		return nil, err
 	}
-	conn := sam.conn
-	_, err = conn.Write([]byte("STREAM FORWARD ID=" + s.id + " PORT=" + lport + " SILENT=false\n"))
+	_, err = sam.conn.Write([]byte("STREAM FORWARD ID=" + s.id + " HOST=" + lhost + " PORT=" + lport + " SILENT=false\n"))
 	if err != nil {
-		conn.Close()
+		sam.conn.Close()
 		return nil, err
 	}
 	buf := make([]byte, 512)
-	n, err := conn.Read(buf)
+	n, err := sam.conn.Read(buf)
 	if err != nil {
-		conn.Close()
+		sam.conn.Close()
 		return nil, err
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(buf[:n]))
@@ -125,15 +124,15 @@ func (s *StreamSession) Listen() (*StreamListener, error) {
 			continue
 		case "RESULT=OK" :
 			port,_ := strconv.Atoi(lport)
-			return &StreamListener{conn, listener, port, s.keys.Addr()}, nil
+			return &StreamListener{sam.conn, listener, port, s.keys.Addr()}, nil
 		case "RESULT=I2P_ERROR" :
-			conn.Close()
+			sam.conn.Close()
 			return nil, errors.New("I2P internal error")
 		case "RESULT=INVALID_ID" :
-			conn.Close()
+			sam.conn.Close()
 			return nil, errors.New("Invalid tunnel ID")
 		default :
-			conn.Close()
+			sam.conn.Close()
 			return nil, errors.New("Unknown error: " + scanner.Text() + " : " + string(buf[:n]))
 		}
 	}

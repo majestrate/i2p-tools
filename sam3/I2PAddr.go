@@ -115,6 +115,7 @@ func NewI2PAddrFromString(addr string) (I2PAddr, error) {
         // strip off .i2p if it's there 
         addr = addr[:len(addr)-4]
     }
+    addr = strings.Trim(addr, "\t\n\r\f ")
 	// very basic check
 	if len(addr) > 4096 || len(addr) < 516 {
 		return I2PAddr(""), errors.New("Not an I2P address")
