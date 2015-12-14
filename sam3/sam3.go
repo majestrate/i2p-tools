@@ -53,7 +53,14 @@ func NewSAM(address string) (*SAM, error) {
 
 // if keyfile fname does not exist
 func (sam *SAM) EnsureKeyfile(fname string) (keys I2PKeys, err error) {
-
+  if fname == "" {
+    // transient
+    keys, err = sam.NewKeys()
+    if err == nil {
+      sam.keys = &keys
+    }
+  } else {
+    // persistant
     _, err = os.Stat(fname)
     if os.IsNotExist(err) {
         // make the keys
@@ -79,7 +86,8 @@ func (sam *SAM) EnsureKeyfile(fname string) (keys I2PKeys, err error) {
             }
         }
     }
-    return
+  }
+  return
 }
 
 // Creates the I2P-equivalent of an IP address, that is unique and only the one

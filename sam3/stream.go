@@ -42,6 +42,31 @@ func (sam *SAM) NewStreamSession(id string, keys I2PKeys, options []string) (*St
 	return &StreamSession{sam.address, id, conn, keys}, nil
 }
 
+// implement net.Dialer
+func (s *StreamSession) Dial(n, addr string) (c net.Conn, err error) {
+
+  var i2paddr I2PAddr
+  var host string
+  host, _, err = net.SplitHostPort(addr)
+  if err == nil {
+    // check for name
+    if strings.HasSuffix(host, ".b32.i2p") || strings.HasSuffix(host, ".i2p") {
+      // name lookup
+      var sam *SAM
+      sam, err = NewSAM(s.samAddr)
+      if err == nil {
+        i2paddr, err = sam.Lookup(host)
+        sam.Close()
+      }
+    } else {
+      // probably a destination
+      i2paddr = I2PAddr(host)
+    }
+    return s.DialI2P(i2paddr)
+  }
+  return
+}
+
 // Dials to an I2P destination and returns a SAMConn, which implements a net.Conn.
 func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 	sam, err := NewSAM(s.samAddr)
