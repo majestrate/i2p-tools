@@ -35,18 +35,22 @@ func NewSAM(address string) (*SAM, error) {
     return nil, err
   }
   if _, err := conn.Write([]byte("HELLO VERSION MIN=3.0 MAX=3.0\n")); err != nil {
+    conn.Close()
     return nil, err
   }
   buf := make([]byte, 256)
   n, err := conn.Read(buf)
   if err != nil {
+    conn.Close()
     return nil, err
   }
   if string(buf[:n]) == "HELLO REPLY RESULT=OK VERSION=3.0\n" {
     return &SAM{address, conn, nil}, nil
   } else if string(buf[:n]) == "HELLO REPLY RESULT=NOVERSION\n" {
+    conn.Close()
     return nil, errors.New("That SAM bridge does not support SAMv3.")
   } else {
+    conn.Close()
     return nil, errors.New(string(buf[:n]))
   }
 }
@@ -197,6 +201,7 @@ func (sam *SAM) newGenericSession(style, id string, keys I2PKeys, options []stri
   text := string(buf[:n])
   if strings.HasPrefix(text, session_OK) {
     if keys.String() != text[len(session_OK):len(text)-1] {
+      conn.Close()
       return nil, errors.New("SAMv3 created a tunnel with keys other than the ones we asked it for")
     }
     return conn, nil //&StreamSession{id, conn, keys, nil, sync.RWMutex{}, nil}, nil

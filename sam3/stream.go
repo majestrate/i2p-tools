@@ -108,7 +108,7 @@ func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 		case "RESULT=TIMEOUT" :
       sam.Close()
 			return nil, errors.New("Timeout")
-      default :
+    default:
       sam.Close()
 			return nil, errors.New("Unknown error: " + scanner.Text() + " : " + string(buf[:n]))
 		}
@@ -172,15 +172,19 @@ func (l *StreamListener) Accept() (net.Conn, error) {
             conn: s.conn,
           }, nil
         } else {
+          s.conn.Close()
           return nil, err
         }
       } else {
+        s.conn.Close()
         return nil, errors.New("invalid sam line: "+line)
       }
     } else {
+      s.conn.Close()
       return nil, err
     }
   } else {
+    s.conn.Close()
     return nil, err
   }
 }
