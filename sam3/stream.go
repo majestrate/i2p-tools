@@ -94,16 +94,22 @@ func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 		case "RESULT=OK" :
 			return &SAMConn{s.keys.addr, addr, conn}, nil
 		case "RESULT=CANT_REACH_PEER" :
+      sam.Close()
 			return nil, errors.New("Can not reach peer")
 		case "RESULT=I2P_ERROR" :
+      sam.Close()
 			return nil, errors.New("I2P internal error")
 		case "RESULT=INVALID_KEY" :
+      sam.Close()
 			return nil, errors.New("Invalid key")
 		case "RESULT=INVALID_ID" :
+      sam.Close()
 			return nil, errors.New("Invalid tunnel ID")
 		case "RESULT=TIMEOUT" :
+      sam.Close()
 			return nil, errors.New("Timeout")
-		default :
+      default :
+      sam.Close()
 			return nil, errors.New("Unknown error: " + scanner.Text() + " : " + string(buf[:n]))
 		}
 	}
