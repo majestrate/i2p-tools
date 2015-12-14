@@ -22,6 +22,10 @@ func (ss StreamSession) ID() string {
 	return ss.id
 }
 
+func (ss *StreamSession) Close() error {
+  return ss.conn.Close()
+}
+
 // Returns the I2P destination (the address) of the stream session
 func (ss StreamSession) Addr() I2PAddr {
 	return ss.keys.Addr()
