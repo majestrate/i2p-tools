@@ -13,7 +13,7 @@ import (
 // also end-to-end encrypted, signed and includes replay-protection. And they 
 // are also built to be surveillance-resistant (yey!).
 type DatagramSession struct {
-    samAddr     string             // address to the sam bridge (ipv4:port)
+  samAddr     string             // address to the sam bridge (ipv4:port)
 	id          string             // tunnel name
 	conn        net.Conn           // connection to sam bridge
 	udpconn     *net.UDPConn       // used to deliver datagrams
