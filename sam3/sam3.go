@@ -225,8 +225,5 @@ func (sam *SAM) newGenericSession(style, id string, keys I2PKeys, options []stri
 
 // close this sam session
 func (sam *SAM) Close() error {
-  if err := sam.conn.Close(); err != nil {
-    return err
-  }
-  return nil
+  return sam.conn.Close()
 }

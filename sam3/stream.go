@@ -170,25 +170,25 @@ func (l *StreamListener) Accept() (net.Conn, error) {
         if err == nil {
           // return wrapped connection
           dest = strings.Trim(dest, "\n")
-          return SAMConn{
+          return &SAMConn{
             laddr: l.laddr,
             raddr: I2PAddr(dest),
             conn: s.conn,
           }, nil
         } else {
-          s.conn.Close()
+          s.Close()
           return nil, err
         }
       } else {
-        s.conn.Close()
+        s.Close()
         return nil, errors.New("invalid sam line: "+line)
       }
     } else {
-      s.conn.Close()
+      s.Close()
       return nil, err
     }
   } else {
-    s.conn.Close()
+    s.Close()
     return nil, err
   }
 }
