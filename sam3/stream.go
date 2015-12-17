@@ -123,7 +123,7 @@ func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 // create a new stream listener to accept inbound connections
 func (s *StreamSession) Listen() (*StreamListener, error) {
   return &StreamListener{
-    samAddr: s.samAddr,
+    session: s,
     id: s.id,
     laddr: s.keys.Addr(),
   }, nil
@@ -131,8 +131,8 @@ func (s *StreamSession) Listen() (*StreamListener, error) {
 
 
 type StreamListener struct {
-  // address of sam
-  samAddr string
+  // parent stream session
+  session *StreamSession
   // our session id
   id string
   // our local address for this sam socket
@@ -145,16 +145,15 @@ func (l *StreamListener) Addr() net.Addr {
   return l.laddr
 }
 
-// close doesn't need to do anything
 // implements net.Listener
 func (l *StreamListener) Close() error {
-  return nil
+  return l.session.Close()
 }
 
 // accept a new inbound connection
 // implements net.Listener
 func (l *StreamListener) Accept() (net.Conn, error) {
-  s, err := NewSAM(l.samAddr)
+  s, err := NewSAM(l.session.samAddr)
   if err == nil {
     // we connected to sam
     // send accept() command
