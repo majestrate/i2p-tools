@@ -187,8 +187,6 @@ func (l *StreamListener) Accept() (net.Conn, error) {
       s.Close()
       return nil, err
     }
-  } else {
-    s.Close()
-    return nil, err
   }
+  return nil, err
 }
