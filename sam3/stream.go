@@ -150,9 +150,13 @@ func (l *StreamListener) Close() error {
   return l.session.Close()
 }
 
-// accept a new inbound connection
 // implements net.Listener
 func (l *StreamListener) Accept() (net.Conn, error) {
+  return l.AcceptI2P()
+}
+
+// accept a new inbound connection
+func (l *StreamListener) AcceptI2P() (*SAMConn, error) {
   s, err := NewSAM(l.session.samAddr)
   if err == nil {
     // we connected to sam
