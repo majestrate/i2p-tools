@@ -66,7 +66,9 @@ func (s *StreamSession) Dial(n, addr string) (c net.Conn, err error) {
       // probably a destination
       i2paddr = I2PAddr(host)
     }
-    return s.DialI2P(i2paddr)
+    if err == nil {
+      return s.DialI2P(i2paddr)
+    }
   }
   return
 }
