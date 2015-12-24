@@ -1,6 +1,6 @@
 package samtun
 import (
-    "net"
+  "net"
 )
 
 type ipPacket []byte

@@ -9,6 +9,7 @@ import (
   "encoding/binary"
   "errors"
   "io"
+  "net"
 )
 
 const (
@@ -34,7 +35,7 @@ const (
   /**
   server says tunnel with tunnel id that we had is now gone
   param: 'tid' -> the tunnel who is gone
-  return: always the value of the param 'tid' 
+  return: no response needed
   */
   SERVER_TUN_BAI
   /*
@@ -167,6 +168,10 @@ func (f *linkFrame) HasPackets() (has bool) {
   return
 }
 
+func (f *linkFrame) Method() int64 {
+  return f.method
+}
+
 func bytesFromPkts(pkts []ipPacket) []byte {
   var buff bytes.Buffer
   // packet format
@@ -207,7 +212,7 @@ func pktsFromBytes(buff []byte) (pkts []ipPacket) {
   return
 }
 
-
+// create RELAY_TUN_DATA frame from a bunch of ip packets for tunnel given its id
 func newFrameFromPackets(pkts []ipPacket, tid int64) (f linkFrame) {
   f.method = RELAY_TUN_DATA
   f.param = map[string]interface{} { K_PKTS : bytesFromPkts(pkts), K_TID: tid}
@@ -215,8 +220,37 @@ func newFrameFromPackets(pkts []ipPacket, tid int64) (f linkFrame) {
   return
 }
 
+// create a reply to a CLIENT_TUN_NEW frame
+func newCreateClientTunnelReply(cidr *net.IPNet, tid int64) (f linkFrame) {
+  f.method = CLIENT_TUN_NEW
+  f.param = map[string]interface{} { K_CIDR : cidr.String() }
+  f.response = tid
+  return
+}
+
+// create CLIENT_TUN_NEW frame
+func newCreateClientTunnel(cidr *net.IPNet) (f linkFrame) {
+  f.method = CLIENT_TUN_NEW
+  f.param = map[string]interface{} { K_CIDR : cidr.String() }
+  f.response = -1
+  return
+}
+
 // a link layer message that is sent over i2p
 type linkMessage struct {
-  frame linkFrame
-  addr i2p.I2PAddr
+  Frame linkFrame
+  Addr i2p.I2PAddr
+}
+
+// parse a link message from bytes
+func parseLinkMessage(from i2p.I2PAddr, payload []byte) (msg *linkMessage, err error) {
+  m := new(linkMessage)
+  buff := bytes.NewBuffer(payload)
+  err = m.Frame.Decode(buff)
+  if err == nil {
+    msg = m
+    msg.Addr = from
+  }
+  buff.Reset()
+  return
 }

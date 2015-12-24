@@ -13,7 +13,7 @@ import (
 type StreamSession struct {
   samAddr     string             // address to the sam bridge (ipv4:port)
 	id          string             // tunnel name
-	conn        net.Conn           // connection to sam bridge
+  conn        net.Conn           // connection to sam
 	keys        I2PKeys            // i2p destination keys
 }
 
@@ -44,6 +44,17 @@ func (sam *SAM) NewStreamSession(id string, keys I2PKeys, options []string) (*St
 		return nil, err
 	}
 	return &StreamSession{sam.address, id, conn, keys}, nil
+}
+
+// lookup name, convienence function
+func (s *StreamSession) Lookup(name string) (I2PAddr, error) {
+  sam, err := NewSAM(s.samAddr)
+  if err == nil {
+    addr, err := sam.Lookup(name)
+    sam.Close()
+    return addr, err
+  }
+  return I2PAddr(""), err
 }
 
 // implement net.Dialer
