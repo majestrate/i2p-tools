@@ -14,7 +14,7 @@ import (
 var cfg_fname string
 
 func init () {
-  flag.StringVar(&cfg_fname, "-config", "config.json", "configuration file")
+  flag.StringVar(&cfg_fname, "config", "config.json", "configuration file")
 }
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
   flag.Parse()
   
   // load configuration
-  err := config.Load(cfg_fname)
+  err := config.Ensure(cfg_fname)
   if err == nil {
     // config load success
     maild.RunMailServer()

@@ -20,6 +20,14 @@ func (d MailDir) String() (str string) {
   return
 }
 
+func (d MailDir) Create() (err error) {
+  err = os.Mkdir(d.String(), 0700)
+  err = os.Mkdir(filepath.Join(d.String(), "new"), 0700)
+  err = os.Mkdir(filepath.Join(d.String(), "cur"), 0700)
+  err = os.Mkdir(filepath.Join(d.String(), "tmp"), 0700)
+  return
+}
+
 // get a string of the current filename to use
 func (d MailDir) File() (fname string) {
   hostname, err := os.Hostname()
@@ -77,6 +85,8 @@ func (d MailDir) Deliver(body io.Reader) (err error) {
         time.Sleep(time.Second * 2)
         fname = d.TempFile()
       }
+      // set err to nil
+      err = nil
       var f *os.File
       // create tmp file
       f, err = os.Create(d.Temp(fname))
@@ -86,7 +96,7 @@ func (d MailDir) Deliver(body io.Reader) (err error) {
       }
       // try writing file
       if err == nil {
-        f, err = os.OpenFile(d.Temp(fname), os.O_WRONLY, 0600)
+        f, err = os.OpenFile(d.Temp(fname), os.O_CREATE | os.O_WRONLY, 0600)
         if err == nil {
           // write body
           _, err = io.CopyBuffer(f, body, nil)

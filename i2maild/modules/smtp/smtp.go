@@ -5,6 +5,7 @@ import (
   "fmt"
   "io"
   "net"
+  "net/smtp"
   "net/textproto"
   "regexp"
   "strings"
@@ -15,6 +16,13 @@ var (
 	rcptToRE   = regexp.MustCompile(`[Tt][Oo]:<(.+)>`)
 	mailFromRE = regexp.MustCompile(`[Ff][Rr][Oo][Mm]:<(.*)>`) // Delivery Status Notifications are sent with "MAIL FROM:<>"
 )
+
+
+// create a new smtp client
+// wrapper function
+func NewClient(conn net.Conn, host string) (*smtp.Client, error) {
+  return smtp.NewClient(conn, host)
+}
 
 // smtp message handler
 type Handler func(remoteAddr net.Addr, from string, to []string, body []byte)
