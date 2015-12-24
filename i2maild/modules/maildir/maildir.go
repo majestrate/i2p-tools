@@ -83,7 +83,7 @@ func (d MailDir) Deliver(body io.Reader) (err error) {
           break
         }
         time.Sleep(time.Second * 2)
-        fname = d.TempFile()
+        fname = d.File()
       }
       // set err to nil
       err = nil
