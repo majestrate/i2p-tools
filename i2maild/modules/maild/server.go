@@ -26,6 +26,7 @@ func RunMailServer() {
     // we gud
     li2p, err = s.Listen()
     if err == nil {
+      Hostname := s.Addr().Base32()
       var d string
       d, err = filepath.Abs(cfg.MailDir)
       if err == nil {
@@ -35,14 +36,14 @@ func RunMailServer() {
           mailbox: maildir.MailDir(d),
         }
         serv.mailbox.Create()
-        glog.Infof("starting up smtp server on i2p at %s", s.Addr().Base32())
+        glog.Infof("starting up smtp server on i2p at %s", Hostname)
         // we are listening for new i2p connections
-        go smtp.Serve(li2p, serv.HandleI2PMail, "i2maild", cfg.Hostname)
+        go smtp.Serve(li2p, serv.HandleI2PMail, "i2maild", Hostname)
         // start up inet smtp server handler
         linet, err = net.Listen("tcp", cfg.SmtpAddr)
         if err == nil {
           glog.Infof("starting up smtp server on inet at %s", cfg.SmtpAddr)
-          go smtp.Serve(linet, serv.HandleInetMail, "i2maild", cfg.Hostname)
+          go smtp.Serve(linet, serv.HandleInetMail, "i2maild", Hostname)
         } else {
           glog.Fatal("failed to listen on inet smtp", err)
         }
