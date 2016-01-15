@@ -22,7 +22,7 @@ implements `net.Listener`, `net.Conn`, `net.Addr`, `net.Dial` that goes over i2p
        // you can pass in "" to generate a transient session that doesn't save the destination keys
        sess, err = i2p.NewSessionEasy("127.0.0.1:7656", filepath.Join("some", "path", "to", "privatekey.txt"))
        if err != nil {
-         log.Println("failed to open connection to i2p router", err)
+         fmt.Printf("failed to open connection to i2p router: %s", err.Error())
          return
        }
        // close our connection to i2p when done
