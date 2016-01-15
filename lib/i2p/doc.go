@@ -9,6 +9,7 @@ implements `net.Listener`, `net.Conn`, `net.Addr`, `net.Dial` that goes over i2p
       "github.com/majestrate/i2p-tools/lib/i2p"
       "fmt"
       "net"
+      "net/http"
       "path/filepath"
     )
 
