@@ -6,11 +6,6 @@ import (
   "net"
 )
 
-
-
-// session keys used for creating an i2p destination
-type Keys sam3.I2PKeys
-
 //
 // a session with the i2p router
 //
