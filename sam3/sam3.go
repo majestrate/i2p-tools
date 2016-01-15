@@ -15,7 +15,7 @@ import (
 
 // Used for controlling I2Ps SAMv3.
 type SAM struct {
-  address     string        // ipv4:port
+  address     string 
   conn        net.Conn
   keys        *I2PKeys
 }
@@ -30,7 +30,8 @@ const (
 
 // Creates a new controller for the I2P routers SAM bridge.
 func NewSAM(address string) (*SAM, error) {
-  conn, err := net.Dial("tcp4", address)
+  // TODO: clean this up
+  conn, err := net.Dial("tcp", address)
   if err != nil {
     return nil, err
   }
@@ -53,6 +54,22 @@ func NewSAM(address string) (*SAM, error) {
     conn.Close()
     return nil, errors.New(string(buf[:n]))
   }
+}
+
+func (sam *SAM) Keys() (k *I2PKeys) {
+  //TODO: copy them?
+  k = sam.keys
+  return
+}
+
+// read public/private keys from an io.Reader
+func (sam *SAM) ReadKeys(r io.Reader) (err error) {
+  var keys I2PKeys
+  keys, err = LoadKeysIncompat(r)
+  if err == nil {
+    sam.keys = &keys
+  }
+  return
 }
 
 // if keyfile fname does not exist

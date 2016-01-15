@@ -60,6 +60,11 @@ func (s *StreamSession) Lookup(name string) (I2PAddr, error) {
 // implement net.Dialer
 func (s *StreamSession) Dial(n, addr string) (c net.Conn, err error) {
 
+  if strings.ToLower(n) != "i2p" {
+    err = errors.New("only i2p network supported")
+    return
+  }
+  
   var i2paddr I2PAddr
   var host string
   host, _, err = net.SplitHostPort(addr)
