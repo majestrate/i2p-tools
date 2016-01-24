@@ -84,7 +84,7 @@ func (s *samSession) Lookup(name string) (a net.Addr, err error) {
 }
 
 // create a new session with i2p "the easy way"
-func NewSessionEasy(addr, keyfile string) (session *samSession, err error) {
+func NewSessionEasy(addr, keyfile string) (session Session, err error) {
   var s *sam3.SAM
   s, err = sam3.NewSAM(addr)
   if err == nil {
@@ -115,7 +115,7 @@ func NewSessionEasy(addr, keyfile string) (session *samSession, err error) {
 // addr - net.Addr of the i2p router's SAM3 port
 // name - name of the session, must be unique
 // r - io.Reader that reads keys
-func NewSession(addr net.Addr, name string, r io.Reader) (session *samSession, err error) {
+func NewSession(addr net.Addr, name string, r io.Reader) (session Session, err error) {
   var s *sam3.SAM
   s, err = sam3.NewSAM(addr.String())
   if err == nil {

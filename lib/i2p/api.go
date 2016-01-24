@@ -1,7 +1,6 @@
 package i2p
 
 import (
-  "github.com/majestrate/i2p-tools/sam3"
   "io"
   "net"
 )
