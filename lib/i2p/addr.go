@@ -4,5 +4,9 @@ import (
 	"github.com/majestrate/i2p-tools/sam3"
 )
 
-type Addr sam3.I2PAddr
 type B32Addr sam3.I2PDestHash
+
+func (a B32Addr) String() (str string) {
+	str = sam3.I2PDestHash(a).String()
+	return
+}
