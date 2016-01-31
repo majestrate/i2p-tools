@@ -1,13 +1,13 @@
 package sam3
 
 import (
-    "bytes"
+  "bytes"
 	"crypto/sha256"
 	"encoding/base32"
 	"encoding/base64"
 	"errors"
-    "io"
-    "strings"
+  "io"
+  "strings"
 )
 
 
