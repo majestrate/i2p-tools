@@ -93,11 +93,13 @@ func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 	conn := sam.conn
 	_,err = conn.Write([]byte("STREAM CONNECT ID=" + s.id + " DESTINATION=" + addr.Base64() + " SILENT=false\n"))
 	if err != nil {
+		conn.Close()
 		return nil, err
 	}
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
 	if err != nil {
+		conn.Close()
 		return nil, err
 	}
 	scanner := bufio.NewScanner(bytes.NewReader(buf[:n]))
