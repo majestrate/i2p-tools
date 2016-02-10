@@ -25,3 +25,5 @@ type Session interface {
   // lookup the address of a name on i2p
   Lookup(name string) (net.Addr, error)
 }
+
+type I2PDestHash [32]byte

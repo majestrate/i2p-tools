@@ -102,7 +102,7 @@ func (s *Server) HandleInetMail(remote net.Addr, from string, to []string, body 
   
   if parseFromAddr(from) != s.cfg.Hostname {
     // bad from address don't send it yo
-    glog.Error("Bad from address %s", from)
+    glog.Errorf("Bad from address %s", from)
     return
   }
   

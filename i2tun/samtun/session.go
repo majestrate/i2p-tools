@@ -4,6 +4,8 @@ package samtun
 //
 
 import (
+  "encoding/binary"
+  "crypto/rand"
   i2p "github.com/majestrate/i2p-tools/sam3"
   "log"
   "net"
@@ -18,7 +20,7 @@ type linkSession struct {
   remote i2p.I2PAddr // session's destination
   addr net.IP // session's IP
   tunnels map[int64]*linkTunnel // all active tunnels
-  acceptTunnel func(*net.IPNet)
+  acceptTunnel func(*net.IPNet) bool
 }
 
 func (s *linkSession) addTunnel(t *linkTunnel) {
@@ -65,11 +67,26 @@ func (s *linkSession) gotInetPacket(pkt ipPacket, chnl chan *linkMessage) {
   }
 }
 
+// generate next available tunnel id
+func (s *linkSession) nextTunnelID() (tid int64) {
+  for {
+    binary.Read(rand.Reader, binary.BigEndian, &tid)
+    if tid < 0 {
+      tid = 0 - tid
+    }
+    _, has := s.tunnels[tid]
+    if ! has && tid != 0 {
+      // tid is unique
+      return
+    }
+  }
+}
+
 // we got a message from i2p
 func (s *linkSession) gotMessage(msg *linkMessage, replychnl chan *linkMessage) {
   switch msg.Frame.Method() {
   case ALIVE_PING:
-    // TODO: record ping
+    // TODO: record ping?
     break
   case CLIENT_TUN_NEW:
     b, err := msg.Frame.GetParamStr(K_CIDR)
@@ -87,7 +104,7 @@ func (s *linkSession) gotMessage(msg *linkMessage, replychnl chan *linkMessage) 
           // reply
           replychnl <- &linkMessage{
             Addr: s.remote,
-            Frame: newCreateClientTunnelReply(t.allowed, t.tid)
+            Frame: newCreateClientTunnelReply(t.allowed, t.tid),
           }
         } else {
           // rejected

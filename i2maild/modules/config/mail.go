@@ -15,7 +15,7 @@ type MailServerConfig struct {
 // default config
 var MailServer = &MailServerConfig{
   SmtpAddr: "127.0.0.1:7625",
-  MailDir: "./i2maild",
+  MailDir: "./maildir",
   Hostname: "smtp.psi.i2p",
   I2P: &i2p.Config{
     Addr: "127.0.0.1:7656",

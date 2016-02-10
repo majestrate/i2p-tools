@@ -103,7 +103,7 @@ func (d MailDir) Deliver(body io.Reader) (err error) {
           f.Close()
           if err == nil {
             // now symlink
-            err = os.Symlink(filepath.Join("tmp", fname), filepath.Join("new", fname))
+            err = os.Symlink(filepath.Join("..", "tmp",fname), filepath.Join("new", fname))
             // if err is nil it's delivered
           }
         }

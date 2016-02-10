@@ -72,6 +72,16 @@ func (f *linkFrame) Encode(w io.Writer) (err error) {
   return BencodeWriteMap(i, w)
 }
 
+// turn frame into bytes
+func (f *linkFrame) Bytes() (b []byte, err error) {
+  buff := new(bytes.Buffer)
+  err = f.Encode(buff)
+  if err == nil {
+    b = buff.Bytes()
+  }
+  return
+}
+
 // decode from reader into this frame
 func (f *linkFrame) Decode(r io.Reader) (err error) {
   var m map[string]interface{}

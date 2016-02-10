@@ -69,9 +69,10 @@ func (link *exitLink) Run() {
     select {
     case _ = <- link.recvchnl:
       // we got a packet from i2p
-    case _ = <- link.sendchnl:
+    case m := <- link.sendchnl:
       // we got a packet to send to i2p
-      link.conn.WriteTo(
+      b, _ := m.Frame.Bytes()
+      link.udpcon.WriteTo(b, m.Addr)
     }
   }
 }

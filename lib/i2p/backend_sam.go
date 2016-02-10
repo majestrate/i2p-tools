@@ -112,12 +112,12 @@ func NewSessionEasy(addr, keyfile string) (session Session, err error) {
 }
 
 // create a new session with i2p
-// addr - net.Addr of the i2p router's SAM3 port
+// addr - i2p router's SAM3 interface
 // name - name of the session, must be unique
 // r - io.Reader that reads keys
-func NewSession(addr net.Addr, name string, r io.Reader) (session Session, err error) {
+func NewSession(addr, name string, r io.Reader) (session Session, err error) {
   var s *sam3.SAM
-  s, err = sam3.NewSAM(addr.String())
+  s, err = sam3.NewSAM(addr)
   if err == nil {
     err = s.ReadKeys(r)
     if err == nil {
@@ -139,4 +139,11 @@ func NewSession(addr net.Addr, name string, r io.Reader) (session Session, err e
     }
   }
   return
+}
+
+
+func (dh I2PDestHash) String() string {
+	var d sam3.I2PDestHash
+	copy(d[:], dh[:])
+	return d.String()
 }

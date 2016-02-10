@@ -98,7 +98,7 @@ func (s *StreamSession) DialI2P(addr I2PAddr) (*SAMConn, error) {
 	}
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		conn.Close()
 		return nil, err
 	}
