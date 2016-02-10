@@ -9,21 +9,21 @@ import (
 )
 
 // The RawSession provides no authentication of senders, and there is no sender
-// address attached to datagrams, so all communication is anonymous. The 
+// address attached to datagrams, so all communication is anonymous. The
 // messages send are however still endpoint-to-endpoint encrypted. You
 // need to figure out a way to identify and authenticate clients yourself, iff
-// that is needed. Raw datagrams may be at most 32 kB in size. There is no 
+// that is needed. Raw datagrams may be at most 32 kB in size. There is no
 // overhead of authentication, which is the reason to use this..
 type RawSession struct {
-    samAddr     string             // address to the sam bridge (ipv4:port)
-	id          string             // tunnel name
-	conn        net.Conn           // connection to sam bridge
-	udpconn     *net.UDPConn       // used to deliver datagrams
-	keys        I2PKeys            // i2p destination keys
-	rUDPAddr    *net.UDPAddr       // the SAM bridge UDP-port
+	samAddr  string       // address to the sam bridge (ipv4:port)
+	id       string       // tunnel name
+	conn     net.Conn     // connection to sam bridge
+	udpconn  *net.UDPConn // used to deliver datagrams
+	keys     I2PKeys      // i2p destination keys
+	rUDPAddr *net.UDPAddr // the SAM bridge UDP-port
 }
 
-// Creates a new raw session. udpPort is the UDP port SAM is listening on, 
+// Creates a new raw session. udpPort is the UDP port SAM is listening on,
 // and if you set it to zero, it will use SAMs standard UDP port.
 func (s *SAM) NewRawSession(id string, keys I2PKeys, options []string, udpPort int) (*RawSession, error) {
 	if udpPort > 65335 || udpPort < 0 {
@@ -37,7 +37,7 @@ func (s *SAM) NewRawSession(id string, keys I2PKeys, options []string, udpPort i
 		s.Close()
 		return nil, err
 	}
-	lUDPAddr, err := net.ResolveUDPAddr("udp4", lhost + ":0")
+	lUDPAddr, err := net.ResolveUDPAddr("udp4", lhost+":0")
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *SAM) NewRawSession(id string, keys I2PKeys, options []string, udpPort i
 		s.Close()
 		return nil, err
 	}
-	rUDPAddr, err := net.ResolveUDPAddr("udp4", rhost + ":" + strconv.Itoa(udpPort))
+	rUDPAddr, err := net.ResolveUDPAddr("udp4", rhost+":"+strconv.Itoa(udpPort))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (s *SAM) NewRawSession(id string, keys I2PKeys, options []string, udpPort i
 	return &RawSession{s.address, id, conn, udpconn, keys, rUDPAddr}, nil
 }
 
-// Reads one raw datagram sent to the destination of the DatagramSession. Returns 
+// Reads one raw datagram sent to the destination of the DatagramSession. Returns
 // the number of bytes read. Who sent the raw message can not be determined at
 // this layer - you need to do it (in a secure way!).
 func (s *RawSession) Read(b []byte) (n int, err error) {
@@ -116,5 +116,3 @@ func (s *RawSession) SetReadDeadline(t time.Time) error {
 func (s *RawSession) SetWriteDeadline(t time.Time) error {
 	return s.udpconn.SetWriteDeadline(t)
 }
-
-

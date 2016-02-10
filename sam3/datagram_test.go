@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-
 func Test_DatagramServerClient(t *testing.T) {
 	if testing.Short() {
 		return
@@ -24,7 +23,7 @@ func Test_DatagramServerClient(t *testing.T) {
 		t.Fail()
 		return
 	}
-//	fmt.Println("\tServer: My address: " + keys.Addr().Base32())
+	//	fmt.Println("\tServer: My address: " + keys.Addr().Base32())
 	fmt.Println("\tServer: Creating tunnel")
 	ds, err := sam.NewDatagramSession("DGserverTun", keys, []string{"inbound.length=0", "outbound.length=0", "inbound.lengthVariance=0", "outbound.lengthVariance=0", "inbound.quantity=1", "outbound.quantity=1"}, 0)
 	if err != nil {
@@ -33,7 +32,7 @@ func Test_DatagramServerClient(t *testing.T) {
 		return
 	}
 	c, w := make(chan bool), make(chan bool)
-	go func(c, w chan(bool)) { 
+	go func(c, w chan (bool)) {
 		sam2, err := NewSAM(yoursam)
 		if err != nil {
 			c <- false
@@ -52,22 +51,22 @@ func Test_DatagramServerClient(t *testing.T) {
 			return
 		}
 		defer ds2.Close()
-//		fmt.Println("\tClient: Servers address: " + ds.LocalAddr().Base32())
-//		fmt.Println("\tClient: Clients address: " + ds2.LocalAddr().Base32())
+		//		fmt.Println("\tClient: Servers address: " + ds.LocalAddr().Base32())
+		//		fmt.Println("\tClient: Clients address: " + ds2.LocalAddr().Base32())
 		fmt.Println("\tClient: Tries to send datagram to server")
 		for {
 			select {
-				default :
-					_, err = ds2.WriteTo([]byte("Hello datagram-world! <3 <3 <3 <3 <3 <3"), ds.LocalAddr())
-					if err != nil {
-						fmt.Println("\tClient: Failed to send datagram: " + err.Error())
-						c <- false
-						return
-					}
-					time.Sleep(5 * time.Second)
-				case <-w :
-					fmt.Println("\tClient: Sent datagram, quitting.")
+			default:
+				_, err = ds2.WriteTo([]byte("Hello datagram-world! <3 <3 <3 <3 <3 <3"), ds.LocalAddr())
+				if err != nil {
+					fmt.Println("\tClient: Failed to send datagram: " + err.Error())
+					c <- false
 					return
+				}
+				time.Sleep(5 * time.Second)
+			case <-w:
+				fmt.Println("\tClient: Sent datagram, quitting.")
+				return
 			}
 		}
 		c <- true
@@ -82,19 +81,14 @@ func Test_DatagramServerClient(t *testing.T) {
 		return
 	}
 	fmt.Println("\tServer: Received datagram: " + string(buf[:n]))
-//	fmt.Println("\tServer: Senders address was: " + saddr.Base32())
+	//	fmt.Println("\tServer: Senders address was: " + saddr.Base32())
 }
-
-
-
-
-
 
 func ExampleDatagramSession() {
 	// Creates a new DatagramSession, which behaves just like a net.PacketConn.
-	
+
 	const samBridge = "127.0.0.1:7656"
-	
+
 	sam, err := NewSAM(samBridge)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -134,4 +128,3 @@ func ExampleDatagramSession() {
 	// Output:
 	//Got message: Hello myself!
 }
-

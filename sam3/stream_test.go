@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-
 func Test_StreamingDial(t *testing.T) {
 	if testing.Short() {
 		return
@@ -52,7 +51,7 @@ func Test_StreamingDial(t *testing.T) {
 	if _, err := conn.Write([]byte("GET /\n")); err != nil {
 		fmt.Println(err.Error())
 		t.Fail()
-		return	
+		return
 	}
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
@@ -67,7 +66,7 @@ func Test_StreamingServerClient(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	
+
 	fmt.Println("Test_StreamingServerClient")
 	sam, err := NewSAM(yoursam)
 	if err != nil {
@@ -86,7 +85,7 @@ func Test_StreamingServerClient(t *testing.T) {
 		return
 	}
 	c, w := make(chan bool), make(chan bool)
-	go func(c, w chan(bool)) { 
+	go func(c, w chan (bool)) {
 		if !(<-w) {
 			return
 		}
@@ -140,18 +139,17 @@ func Test_StreamingServerClient(t *testing.T) {
 	}
 	defer conn.Close()
 	buf := make([]byte, 512)
-	n,err := conn.Read(buf)
+	n, err := conn.Read(buf)
 	fmt.Printf("\tClient exited successfully: %t\n", <-c)
 	fmt.Println("\tServer: received from Client: " + string(buf[:n]))
 }
 
-
 func ExampleStreamSession() {
 	// Creates a new StreamingSession, dials to zzz.i2p and gets a SAMConn
 	// which behaves just like a normal net.Conn.
-	
+
 	const samBridge = "127.0.0.1:7656"
-	
+
 	sam, err := NewSAM(samBridge)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -174,7 +172,7 @@ func ExampleStreamSession() {
 		fmt.Println(err.Error())
 		return
 	}
-	
+
 	conn, err := ss.DialI2P(someone)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -184,7 +182,7 @@ func ExampleStreamSession() {
 	fmt.Println("Sending HTTP GET /")
 	if _, err := conn.Write([]byte("GET /\n")); err != nil {
 		fmt.Println(err.Error())
-		return	
+		return
 	}
 	buf := make([]byte, 4096)
 	n, err := conn.Read(buf)
@@ -194,7 +192,7 @@ func ExampleStreamSession() {
 		fmt.Println("Read HTTP/HTML from zzz.i2p")
 	}
 	return
-	
+
 	// Output:
 	//Sending HTTP GET /
 	//Read HTTP/HTML from zzz.i2p
@@ -204,7 +202,7 @@ func ExampleStreamListener() {
 	// One server Accept()ing on a StreamListener, and one client that Dials
 	// through I2P to the server. Server writes "Hello world!" through a SAMConn
 	// (which implements net.Conn) and the client prints the message.
-	
+
 	const samBridge = "127.0.0.1:7656"
 
 	sam, err := NewSAM(samBridge)
@@ -213,7 +211,7 @@ func ExampleStreamListener() {
 		return
 	}
 	defer sam.Close()
-	keys, err := sam.NewKeys() 
+	keys, err := sam.NewKeys()
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -229,7 +227,7 @@ func ExampleStreamListener() {
 			return
 		}
 		defer csam.Close()
-		keys, err := csam.NewKeys() 
+		keys, err := csam.NewKeys()
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -255,7 +253,7 @@ func ExampleStreamListener() {
 		}
 		fmt.Println(string(buf[:n]))
 		quit <- true
-	}(keys.Addr())          // end of client
+	}(keys.Addr()) // end of client
 
 	ss, err := sam.NewStreamSession("server_example", keys, Options_Small)
 	if err != nil {
@@ -273,9 +271,9 @@ func ExampleStreamListener() {
 		return
 	}
 	conn.Write([]byte("Hello world!"))
-	
+
 	<-quit // waits for client to die, for example only
-	
+
 	// Output:
 	//Hello world!
 }

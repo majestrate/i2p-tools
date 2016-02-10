@@ -10,18 +10,18 @@ import (
 
 // The DatagramSession implements net.PacketConn. It works almost like ordinary
 // UDP, except that datagrams may be at most 31kB large. These datagrams are
-// also end-to-end encrypted, signed and includes replay-protection. And they 
+// also end-to-end encrypted, signed and includes replay-protection. And they
 // are also built to be surveillance-resistant (yey!).
 type DatagramSession struct {
-  samAddr     string             // address to the sam bridge (ipv4:port)
-	id          string             // tunnel name
-	conn        net.Conn           // connection to sam bridge
-	udpconn     *net.UDPConn       // used to deliver datagrams
-	keys        I2PKeys            // i2p destination keys
-	rUDPAddr    *net.UDPAddr       // the SAM bridge UDP-port
+	samAddr  string       // address to the sam bridge (ipv4:port)
+	id       string       // tunnel name
+	conn     net.Conn     // connection to sam bridge
+	udpconn  *net.UDPConn // used to deliver datagrams
+	keys     I2PKeys      // i2p destination keys
+	rUDPAddr *net.UDPAddr // the SAM bridge UDP-port
 }
 
-// Creates a new datagram session. udpPort is the UDP port SAM is listening on, 
+// Creates a new datagram session. udpPort is the UDP port SAM is listening on,
 // and if you set it to zero, it will use SAMs standard UDP port.
 func (s *SAM) NewDatagramSession(id string, keys I2PKeys, options []string, udpPort int) (*DatagramSession, error) {
 	if udpPort > 65335 || udpPort < 0 {
@@ -35,7 +35,7 @@ func (s *SAM) NewDatagramSession(id string, keys I2PKeys, options []string, udpP
 		s.Close()
 		return nil, err
 	}
-	lUDPAddr, err := net.ResolveUDPAddr("udp4", lhost + ":0")
+	lUDPAddr, err := net.ResolveUDPAddr("udp4", lhost+":0")
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *SAM) NewDatagramSession(id string, keys I2PKeys, options []string, udpP
 		s.Close()
 		return nil, err
 	}
-	rUDPAddr, err := net.ResolveUDPAddr("udp4", rhost + ":" + strconv.Itoa(udpPort))
+	rUDPAddr, err := net.ResolveUDPAddr("udp4", rhost+":"+strconv.Itoa(udpPort))
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +60,12 @@ func (s *SAM) NewDatagramSession(id string, keys I2PKeys, options []string, udpP
 	return &DatagramSession{s.address, id, conn, udpconn, keys, rUDPAddr}, nil
 }
 
-// Reads one datagram sent to the destination of the DatagramSession. Returns 
+// Reads one datagram sent to the destination of the DatagramSession. Returns
 // the number of bytes read, from what address it was sent, or an error.
 func (s *DatagramSession) ReadFrom(b []byte) (n int, addr I2PAddr, err error) {
 	// extra bytes to read the remote address of incomming datagram
-	buf := make([]byte, len(b) + 4096)
-	
+	buf := make([]byte, len(b)+4096)
+
 	for {
 		// very basic protection: only accept incomming UDP messages from the IP of the SAM bridge
 		var saddr *net.UDPAddr
@@ -87,16 +87,16 @@ func (s *DatagramSession) ReadFrom(b []byte) (n int, addr I2PAddr, err error) {
 		return 0, I2PAddr(""), errors.New("Could not parse incomming message remote address: " + err.Error())
 	}
 	// shift out the incomming address to contain only the data received
-	if ( n - i+1 ) > len(b) {
+	if (n - i + 1) > len(b) {
 		copy(b, buf[i+1:i+1+len(b)])
-		return n-(i+1), raddr, errors.New("Datagram did not fit into your buffer.")
+		return n - (i + 1), raddr, errors.New("Datagram did not fit into your buffer.")
 	} else {
 		copy(b, buf[i+1:n])
-		return n-(i+1), raddr, nil
+		return n - (i + 1), raddr, nil
 	}
 }
 
-// Sends one signed datagram to the destination specified. At the time of 
+// Sends one signed datagram to the destination specified. At the time of
 // writing, maximum size is 31 kilobyte, but this may change in the future.
 // Implements net.PacketConn.
 func (s *DatagramSession) WriteTo(b []byte, addr I2PAddr) (n int, err error) {
@@ -121,7 +121,7 @@ func (s *DatagramSession) LocalAddr() I2PAddr {
 	return s.keys.Addr()
 }
 
-// Sets read and write deadlines for the DatagramSession. Implements 
+// Sets read and write deadlines for the DatagramSession. Implements
 // net.PacketConn and does the same thing. Setting write deadlines for datagrams
 // is seldom done.
 func (s *DatagramSession) SetDeadline(t time.Time) error {
@@ -137,5 +137,3 @@ func (s *DatagramSession) SetReadDeadline(t time.Time) error {
 func (s *DatagramSession) SetWriteDeadline(t time.Time) error {
 	return s.udpconn.SetWriteDeadline(t)
 }
-
-

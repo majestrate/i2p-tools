@@ -1,18 +1,12 @@
 package sam3
 
-
-
 import (
 	"fmt"
 	"testing"
 	"time"
 )
 
-
-
 const yoursam = "127.0.0.1:7656"
-
-
 
 func Test_Basic(t *testing.T) {
 	fmt.Println("Test_Basic")
@@ -23,7 +17,7 @@ func Test_Basic(t *testing.T) {
 		t.Fail()
 		return
 	}
-	
+
 	fmt.Println("\tCreating new keys...")
 	keys, err := sam.NewKeys()
 	if err != nil {
@@ -33,21 +27,20 @@ func Test_Basic(t *testing.T) {
 		fmt.Println("\tAddress created: " + keys.Addr().Base32())
 		fmt.Println("\tI2PKeys: " + string(keys.both)[:50] + "(...etc)")
 	}
-	
+
 	addr2, err := sam.Lookup("zzz.i2p")
 	if err != nil {
 		fmt.Println(err.Error())
 		t.Fail()
 	} else {
 		fmt.Println("\tzzz.i2p = " + addr2.Base32())
-	}		
+	}
 
 	if err := sam.Close(); err != nil {
 		fmt.Println(err.Error())
 		t.Fail()
 	}
 }
-
 
 /*
 func Test_GenericSession(t *testing.T) {
@@ -95,13 +88,6 @@ func Test_GenericSession(t *testing.T) {
 }
 */
 
-
-
-
-
-
-
-
 func Test_RawServerClient(t *testing.T) {
 	if testing.Short() {
 		return
@@ -127,7 +113,7 @@ func Test_RawServerClient(t *testing.T) {
 		return
 	}
 	c, w := make(chan bool), make(chan bool)
-	go func(c, w chan(bool)) { 
+	go func(c, w chan (bool)) {
 		sam2, err := NewSAM(yoursam)
 		if err != nil {
 			c <- false
@@ -149,17 +135,17 @@ func Test_RawServerClient(t *testing.T) {
 		fmt.Println("\tClient: Tries to send raw datagram to server")
 		for {
 			select {
-				default :
-					_, err = rs2.WriteTo([]byte("Hello raw-world! <3 <3 <3 <3 <3 <3"), rs.LocalAddr())
-					if err != nil {
-						fmt.Println("\tClient: Failed to send raw datagram: " + err.Error())
-						c <- false
-						return
-					}
-					time.Sleep(5 * time.Second)
-				case <-w :
-					fmt.Println("\tClient: Sent raw datagram, quitting.")
+			default:
+				_, err = rs2.WriteTo([]byte("Hello raw-world! <3 <3 <3 <3 <3 <3"), rs.LocalAddr())
+				if err != nil {
+					fmt.Println("\tClient: Failed to send raw datagram: " + err.Error())
+					c <- false
 					return
+				}
+				time.Sleep(5 * time.Second)
+			case <-w:
+				fmt.Println("\tClient: Sent raw datagram, quitting.")
+				return
 			}
 		}
 		c <- true
@@ -174,7 +160,5 @@ func Test_RawServerClient(t *testing.T) {
 		return
 	}
 	fmt.Println("\tServer: Received datagram: " + string(buf[:n]))
-//	fmt.Println("\tServer: Senders address was: " + saddr.Base32())
+	//	fmt.Println("\tServer: Senders address was: " + saddr.Base32())
 }
-
-
