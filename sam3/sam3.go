@@ -146,11 +146,13 @@ func (sam *SAM) NewKeys() (I2PKeys, error) {
 // addresses, 3) by asking peers in the I2P network.
 func (sam *SAM) Lookup(name string) (I2PAddr, error) {
 	if _, err := sam.conn.Write([]byte("NAMING LOOKUP NAME=" + name + "\n")); err != nil {
+		sam.Close()
 		return I2PAddr(""), err
 	}
 	buf := make([]byte, 4096)
 	n, err := sam.conn.Read(buf)
 	if err != nil {
+		sam.Close()
 		return I2PAddr(""), err
 	}
 	if n <= 13 || !strings.HasPrefix(string(buf[:n]), "NAMING REPLY ") {
