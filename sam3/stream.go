@@ -67,7 +67,7 @@ func (s *StreamSession) Dial(n, addr string) (c net.Conn, err error) {
 		// check for name
 		if strings.HasSuffix(host, ".b32.i2p") || strings.HasSuffix(host, ".i2p") {
 			// name lookup
-			i2paddr, err = s.Lookup(addr)
+			i2paddr, err = s.Lookup(host)
 		} else {
 			// probably a destination
 			i2paddr = I2PAddr(host)
