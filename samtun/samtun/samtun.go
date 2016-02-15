@@ -48,6 +48,7 @@ func Run() {
       return 
     }
     Map := make(addrMap)
+    iface, err := newTun(conf.Ifname, ip.String(), conf.Netmask, conf.MTU)
     // we have a sam connection
     var keys sam3.I2PKeys
     if ! checkfile(conf.Keyfile) {
@@ -116,7 +117,6 @@ func Run() {
             return
           }
           log.Println("we are", ourAddr.Base32())
-          iface, err := newTun(conf.Ifname, ip.String(), conf.Netmask, conf.MTU)
           if err != nil {
             log.Fatalf("failed to create network interface %s", err.Error())
           }
