@@ -84,7 +84,7 @@ func (s *samSession) Lookup(name string) (a net.Addr, err error) {
 }
 
 // create a new session with i2p "the easy way"
-func NewSessionEasy(addr, keyfile string) (session Session, err error) {
+func NewStreamSessionEasy(addr, keyfile string) (session StreamSession, err error) {
   var s *sam3.SAM
   s, err = sam3.NewSAM(addr)
   if err == nil {
@@ -111,11 +111,44 @@ func NewSessionEasy(addr, keyfile string) (session Session, err error) {
   return
 }
 
-// create a new session with i2p
+// create a new packet session with i2p
 // addr - i2p router's SAM3 interface
 // name - name of the session, must be unique
 // r - io.Reader that reads keys
-func NewSession(addr, name string, r io.Reader) (session Session, err error) {
+func NewPacketSession(addr, name string, r io.Reader) (session PacketSession, err error) {
+  var s *sam3.SAM
+  s, err = sam3.NewSAM(addr)
+  if err == nil {
+		defer s.Close()
+    err = s.ReadKeys(r)
+    if err == nil {
+      k := s.Keys()
+      session, err = s.NewDatagramSession(name, *k, sam3.Options_Medium, 0)
+		}
+	}
+	return
+}
+
+func NewPacketSessionEasy(addr, keyfile string) (session PacketSession, err error) {
+  var s *sam3.SAM
+  s, err = sam3.NewSAM(addr)
+  if err == nil {
+		defer s.Close()		
+    _, err = s.EnsureKeyfile(keyfile)
+    if err == nil {
+      k := s.Keys()
+			name := randStr(10)
+      session, err = s.NewDatagramSession(name, *k, sam3.Options_Medium, 0)
+		}
+	}
+	return
+}
+
+// create a new stream session with i2p
+// addr - i2p rotuer's SAM3 interface
+// name - the name of the session, must be unique
+// r - io.Reader that reads keys
+func NewStreamSession(addr, name string, r io.Reader) (session StreamSession, err error) {
   var s *sam3.SAM
   s, err = sam3.NewSAM(addr)
   if err == nil {
@@ -138,9 +171,14 @@ func NewSession(addr, name string, r io.Reader) (session Session, err error) {
       s = nil
     }
   }
-  return
+  return	
 }
 
+
+// backwards compat
+var NewSessionEasy = NewStreamSessionEasy
+// backwards compat
+var NewSession = NewStreamSession
 
 func (dh I2PDestHash) String() string {
 	var d sam3.I2PDestHash
