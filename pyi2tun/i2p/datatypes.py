@@ -432,8 +432,8 @@ class Destination(object):
         data = self.serialize()
         return util.i2p_b32encode(crypto.sha256(data)).decode('ascii')
 
-    def base64(self):
-        return util.i2p_b64encode(self.serialize()).decode('ascii')
+    def base64(self, priv=False):
+        return util.i2p_b64encode(self.serialize(priv)).decode('ascii')
 
 
 class Lease(object):

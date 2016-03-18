@@ -37,10 +37,11 @@ def main():
         d = Destination()
         dp = d.to_public().base32()
         ouraddr = "10.10.{}.{}".format(randint(1, 250), randint(1, 250))
+        conf["interface"]["addr"] = ouraddr
         print("our ip is {}".format(ouraddr))
         print("our destination is {}".format(dp))
         with open(conf['keyfile'], 'wb') as f:
-            f.write(d.serialize())
+            f.write(d.serialize(True))
         conf["map"][ouraddr] = dp
         config.save(conf, args.conf)
         print("saved initial config")
@@ -75,7 +76,7 @@ def main():
     if 'pump' in cfg:
         pump = int(cfg["pump"]) / 1000.0
     # make handler
-    print ("link going up...")
+    print ("link going up... (may take a while)")
     handler = link.Handler(tun, tap, sw, proto(iface_cfg['mtu'], sw.next_frame, pump), cfg["keyfile"], cfg["sam"])
     print ("network interface going up...")
     tun.up()

@@ -31,11 +31,11 @@ class SAMLink:
         samaddr = (samcfg["controlHost"], samcfg["controlPort"])
         dgramaddr = (samcfg["dgramHost"], samcfg["dgramPort"])
         dgrambind = (samcfg["dgramBind"], 0)
-        self._conn = socket.socket(type=socket.SOCK_DGRAM, samaddr=samaddr, dgramaddr=dgramaddr, dgrambind=dgrambind)
+        self._conn = socket.socket(socket.AF_I2P, type=socket.SOCK_DGRAM, samaddr=samaddr, dgramaddr=dgramaddr, dgrambind=dgrambind)
         self._conn.bind(keyfile, **samcfg["opts"])
         self._log.debug("sam bound")
         self.dest = self._conn.getsocketinfo()
-        self.loop.add_reader(self._tundev, self._read_tun)
+        self.loop.add_reader(self._netif, self._read_netif)
         self.loop.add_reader(self._conn, self._read_sock)
         self.loop.call_soon(self._pump)
         
@@ -129,7 +129,8 @@ class SAMLink:
         # read packet + overhead
         self._log.debug('readif')
         buff = self._netif.read(self._protocol.mtu + 64)
-        self._read_buff.append((None, buff))
+        addr = '%d.%d.%d.%d' % ( buff[20], buff[21], buff[22], buff[23]) 
+        self._read_buff.append((addr, buff))
 
     def _read_sock(self):
         self._log.debug('read sock')

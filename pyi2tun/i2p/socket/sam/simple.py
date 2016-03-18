@@ -17,7 +17,7 @@ import socket as pysocket
 
 from contextlib import wraps
 
-
+Error = pysocket.error
 
 class State(Enum):
     """
@@ -247,6 +247,7 @@ class Socket(object):
             nickname = randnick(8)
         self._state = State.Connecting
         self._log.info('bind')
+        host, port = None, None
         if self._type == SAM.SOCK_STREAM:
             style = "STREAM"
         elif self._type == SAM.SOCK_DGRAM:
@@ -254,8 +255,8 @@ class Socket(object):
             self._dgram_sock = pysocket.socket(type=pysocket.SOCK_DGRAM)
             self._dgram_sock.bind(self._dgram_bind)
             port = self._dgram_sock.getsockname()[1]
-            i2cpOptions["HOST"] = self._dgram_bind[0]
-            i2cpOptions["PORT"] = port
+            host = self._dgram_bind[0]
+
         else:
             style = "RAW"
             
@@ -265,17 +266,18 @@ class Socket(object):
                 if os.path.exists(keyfile):
                     with open(keyfile, 'rb') as f:
                         self.dest = datatypes.Destination(raw=f, private=True)
-                        self._keys = self.dest.base64()
+                        self._keys = self.dest.base64(True)
             elif hasattr(keyfile, 'read'):
                 self.dest = datatypes.Destination(raw=keyfile, private=True)
-                self._keys = self.dest.base64()
+                self._keys = self.dest.base64(True)
         cmd = 'SESSION CREATE STYLE={} DESTINATION={} ID={}'.format(style, self._keys, nickname)
-
+        if host:
+            cmd += " HOST={}".format(host)
+        if port:
+            cmd += " PORT={}".format(port)
         for opt in i2cpOptions:
             cmd += " {}={}".format(opt, i2cpOptions[opt])
-
         repl = _sam_cmd(self._samSocket, cmd)
-
         if repl.opts['RESULT'] == 'OK':
             self._keys = repl.opts['DESTINATION']
             if self.dest is None:

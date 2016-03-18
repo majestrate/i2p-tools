@@ -28,15 +28,11 @@ def genconfig():
             "dgramHost" : "127.0.0.1",
             "dgramPort" : 7655,
             "dgramBind" : "127.0.0.1",
-            "opts" {
-                "inbound.quantity" : "2",
-                "outbound.quantity": "2",
-                "inbound.length"  : "3",
-                "outbound.length" : "3",
+            "opts" : {
             },
         }
     }
-c
+
 def load(fname="i2tun.json"):
     if not os.path.exists(fname):
         save(genconfig(), fname)
