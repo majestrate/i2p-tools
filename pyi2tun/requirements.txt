@@ -1,0 +1,5 @@
+pycrypto
+enum34>=1.0
+pyelliptic==1.5.6
+libnacl>=1.4.3
+python-pytun
