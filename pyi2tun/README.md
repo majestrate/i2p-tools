@@ -9,5 +9,7 @@ point to point ip over i2p+udp shim
     venv/bin/pip install -r requirements.txt
     
     # generate initial configuration
-    venv/bin/python -m i2tun --generate
-    
+    sudo venv/bin/python -m i2tun --generate
+
+    # run vpn tunnel
+    sudo venv/bin/python -m i2tun 
