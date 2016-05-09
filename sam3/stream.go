@@ -167,10 +167,7 @@ func (l *StreamListener) Accept() (net.Conn, error) {
 // accept a new inbound connection
 func (l *StreamListener) AcceptI2P() (*SAMConn, error) {
 	s, err := NewSAM(l.session.samAddr)
-	if err != nil {
-		return nil, err
-	}
-	for {
+	if err == nil {
 		// we connected to sam
 		// send accept() command
 		_, err = io.WriteString(s.conn, "STREAM ACCEPT ID="+l.id+" SILENT=false\n")
@@ -200,12 +197,7 @@ func (l *StreamListener) AcceptI2P() (*SAMConn, error) {
 			}
 		} else {
 			s.Close()
-			// try again
-			s, err = NewSAM(l.session.samAddr)
-			if err != nil {
-				return nil, err
-			}
-			continue
+			return nil, err
 		}
 	}
 	s.Close()

@@ -160,7 +160,7 @@ func (sam *SAM) Lookup(name string) (I2PAddr, error) {
 	}
 	s := bufio.NewScanner(bytes.NewReader(buf[13:n]))
 	s.Split(bufio.ScanWords)
-
+	
 	errStr := ""
 	for s.Scan() {
 		text := s.Text()
