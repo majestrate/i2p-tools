@@ -121,7 +121,7 @@ class JsonRpc(object):
                     responses.append(
                         rpcresponse.Response(jsonrpc = jsonrpc, id = id, result = result)
                     )
-            except TypeError, err:
+            except TypeError as err:
                 traceback_info = "".join(traceback.format_exception(*sys.exc_info()))
                 if "takes exactly" in unicode(err) and "arguments" in unicode(err):
                     responses.append(
@@ -139,7 +139,7 @@ class JsonRpc(object):
                             error = rpcerror.InternalError(data = traceback_info)
                         )
                     )
-            except rpcerror.JsonRpcError, err:
+            except rpcerror.JsonRpcError as err:
                 responses.append(
                     rpcresponse.Response(
                         jsonrpc = jsonrpc,
@@ -147,7 +147,7 @@ class JsonRpc(object):
                         error = err
                     )
                 )
-            except BaseException, err:
+            except BaseException as err:
                 traceback_info = "".join(traceback.format_exception(*sys.exc_info()))
                 if hasattr(err, "data"):
                     error_data = err.data
