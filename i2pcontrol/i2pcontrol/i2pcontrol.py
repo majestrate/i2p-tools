@@ -22,7 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE
 
-import pyjsonrpc, ssl
+import requests
+import ssl
+import json
+import os
 
 # This isn't really used right now.
 class RouterStatus():
@@ -64,63 +67,87 @@ class I2PController:
     DEFAULT_PORT = 7650
     DEFAULT_PASSWORD = 'itoopie'
 
-    def __init__(self, address=(DEFAULT_HOST, DEFAULT_PORT), password=DEFAULT_PASSWORD, use_ssl=True):
+    def __init__(self, address=(DEFAULT_HOST, DEFAULT_PORT), password=DEFAULT_PASSWORD, ssl_cert=False):
         # I2PControl mandated SSL, even tho we will be localhost.
         # Since we don't know the cert, and it's local, let's ignore it.
-        context = None
         proto = 'http'
-        if use_ssl:
-            # TODO: verify ssl
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-            proto += 's'
+        self._ssl = None
+        if ssl_cert is not None:
+                self._ssl = ssl_cert
+                proto += 's'
         self._password = password
         self._token = None
-        self._http_client = pyjsonrpc.HttpClient(
-            url = ''.join(['{}://'.format(proto),address[0],':',str(address[1]),'/']),
-            ssl_context = context
-        )
-
-        result = self._http_client.call('Authenticate',{ 
+        self._url = ''.join(['{}://'.format(proto),address[0],':',str(address[1]),'/'])
+        result = self._call('Authenticate',{ 
             'API': I2PController.API_VERSION,
             'Password': self._password
-            })
+        })
 
         # TODO: Deal with errors better.
         self._token = result['Token']
 
         if result['API'] != I2PController.API_VERSION:
             print('looks like the api\'s do not match')
+
+    def _call(self, method, args):
+        """call jsonrpc method
+        """
+        req = {
+             "method": method,
+             "jsonrpc": "2.0",
+             "id" : None, # TODO: generate random id
+             "params": args
+        }
+        body = json.dumps(req)
+        params = {
+                "headers": {"Content-Type": "application/json; charset=utf-8"},
+                "url": self._url,
+                "data": body,
+        }
+        if self._ssl is not None:
+            params["verify"] = False
+        resp = requests.post(**params)
+        j = None
+        if resp.status_code == 200:
+            try:
+                 j = json.loads(resp.text)
+            except Exception as e:
+                 print(resp.text)
+                 raise e
+            if "error" in j:
+                 err = j["error"]
+                 raise Exception(err["message"])
+        return j["result"]
+        
     # Echo
     def echo(self, string='echo'):
-        return self._http_client.call('Echo',{ 
+        return self._call('Echo',{ 
                 'Token': self._token,
                 'Echo': string
                 }
-            )['Result']
+            )
 
     # GetRate
     # 300000 is 5 minutes, measured in ms.
     # http://i2p-projekt.i2p/en/misc/ratestats
     def getRate(self, stat='', period=5*60*1000):
-        return self._http_client.call('GetRate', {
+        return self._call('GetRate', {
                 'Token': self._token,
                 'Period': period,
                 'Stat': stat
                 }
-            )['Result']
+            )['result']
 
     # I2PControl
     def getI2PControlSettings(self, address=DEFAULT_HOST, password=DEFAULT_PASSWORD, port=DEFAULT_PORT):
-        return self._http_client.call('I2PControl', {
+        return self._call('I2PControl', {
                 'Token': self._token,
                 'SettingsSaved': '',
                 'RestartNeeded': ''
                 })
 
     def setI2PControlSettings(self, address=DEFAULT_HOST, password=DEFAULT_PASSWORD, port=DEFAULT_PORT):
-        result = self._http_client.call('I2PControl', {
+        result = self._call('I2PControl', {
                 'Token': self._token,
                 'i2pcontrol.address': address,
                 'i2pcontrol.port': port,
@@ -131,7 +158,7 @@ class I2PController:
     
     # RouterInfo
     def getRouterInfo(self):
-        return self._http_client.call('RouterInfo', {
+        return self._call('RouterInfo', {
                 'Token': self._token,
                 'i2p.router.status':'',
                 'i2p.router.uptime':'',
@@ -151,44 +178,44 @@ class I2PController:
     
     # RouterManager
     def reseed(self):
-        return self._http_client.call('RouterManager', {
+        return self._call('RouterManager', {
                 'Token': self._token,
                 'Reseed': ''
                 })
 
     def restart(self):
-        return self._http_client.call('RouterManager', {
+        return self._call('RouterManager', {
                 'Token': self._token,
                 'Restart': ''
                 })
 
     def restart_graceful(self):
-        return self._http_client.call('RouterManager', {
+        return self._call('RouterManager', {
                 'Token': self._token,
                 'RestartGraceful': ''
                 })
 
     def shutdown(self):
-        return self._http_client.call('RouterManager', {
+        return self._call('RouterManager', {
                 'Token': self._token,
                 'Shutdown': ''
                 })
 
     def shutdown_graceful(self):
-        return self._http_client.call('RouterManager', {
+        return self._call('RouterManager', {
                 'Token': self._token,
                 'ShutdownGraceful': ''
                 })
     
     # NetworkSettings
     def setNetworkSetting(self, setting='', value=''):
-        return self._http_client.call('NetworkSetting', {
+        return self._call('NetworkSetting', {
                 'Token': self._token,
                 setting: value
                 })
         
     def getNetworkSetting(self):
-        return self._http_client.call('NetworkSetting', {
+        return self._call('NetworkSetting', {
                 'Token': self._token,
                 'i2p.router.net.ntcp.port': None,
                 'i2p.router.net.ntcp.hostname': None,

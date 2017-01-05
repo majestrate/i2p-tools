@@ -14,6 +14,7 @@ setup(name = 'i2pcontrol',
     install_requires = ['bunch'], # Needed by pyjsonrpc
     tests_require=['pytest'],
     url = 'https://github.com/majestrate/i2p-tools',
-    packages = ['i2pcontrol', 'i2pcontrol.pyjsonrpc'],
+    packages = ['i2pcontrol'],
+    install_packages = ["requests"]
 )
 
