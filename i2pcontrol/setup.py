@@ -11,10 +11,9 @@ setup(name = 'i2pcontrol',
 	'License :: OSI Approved :: MIT License',
 	'Topic :: Utilities',
 	],
-    install_requires = ['bunch'], # Needed by pyjsonrpc
+    install_requires = ['requests'], 
     tests_require=['pytest'],
     url = 'https://github.com/majestrate/i2p-tools',
-    packages = ['i2pcontrol'],
-    install_packages = ["requests"]
+    packages=['i2pcontrol']
 )
 
