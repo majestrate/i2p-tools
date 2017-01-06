@@ -80,7 +80,8 @@ class I2PController:
         proto = 'http'
         self._requests = requests.Session()
         if ssl_cert is not None:
-            self._requests.verify = ssl_cert
+            if ssl_cert:
+                self._requests.verify = ssl_cert
             proto += 's'
             self._requests.mount('{}://'.format(proto), _I2PControlAdaptor())
 
