@@ -29,7 +29,8 @@ import os
 if __name__ == '__main__':
     home = os.environ["HOME"]
     cert = os.path.join(home, ".i2pd", "i2pcontrol.pem")
-    key = os.path.join(home, ".i2pd", "i2pcontrol.key")
+    if not os.path.exists(cert):
+        cert = False
     a = I2PController(ssl_cert=cert)
     vals = a.getRouterInfo()
     print(''.join([
