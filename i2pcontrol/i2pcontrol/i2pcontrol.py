@@ -100,6 +100,8 @@ class I2PController:
 
         if result['API'] != I2PController.API_VERSION:
             raise Exception('looks like the api\'s do not match')
+        # expose this member
+        self.call = self._call
 
     def _call(self, method, args):
         """call jsonrpc method
