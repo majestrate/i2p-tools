@@ -23,14 +23,17 @@
 # THE SOFTWARE
 
 from .i2pcontrol import *
+import os
 
 # Little demo on how it could be used.
 if __name__ == '__main__':
-	a = I2PController()
-	print(a.getNetworkSetting())
-	vals = a.getRouterInfo()
-	print(''.join([
-		'You are running i2p version ', str(vals['i2p.router.version']), '. ',
-		'It has been up for ', str(vals['i2p.router.uptime']), 'ms. ',
-		'Your router knows ', str(vals['i2p.router.netdb.knownpeers']),' peers.'
-		]))
+    home = os.environ["HOME"]
+    cert = os.path.join(home, ".i2pd", "i2pcontrol.pem")
+    key = os.path.join(home, ".i2pd", "i2pcontrol.key")
+    a = I2PController(ssl_cert=cert)
+    vals = a.getRouterInfo()
+    print(''.join([
+        'You are running i2p version ', str(vals['i2p.router.version']), '. ',
+        'It has been up for ', str(vals['i2p.router.uptime']), 'ms. ',
+        'Your router knows ', str(vals['i2p.router.netdb.knownpeers']),' peers.'
+        ]))

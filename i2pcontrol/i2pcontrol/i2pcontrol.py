@@ -23,6 +23,7 @@
 # THE SOFTWARE
 
 import requests
+requests.packages.urllib3.disable_warnings()
 import ssl
 import json
 import os
@@ -60,6 +61,12 @@ class I2PControlErrors():
     API_VERSION_NOT_SUPPLIED = -32005
     API_INCOMPATIBLE = -32006
 
+class _I2PControlAdaptor(requests.adapters.HTTPAdapter):
+
+    def cert_verify(self, conn, url, verify, cert):
+        conn.assert_hostname = 'i2pd.i2pcontrol'
+        return super().cert_verify(conn, url, verify, cert)
+
 # Documentation: http://i2p-projekt.i2p/en/docs/api/i2pcontrol
 class I2PController:
     API_VERSION = 1
@@ -71,10 +78,12 @@ class I2PController:
         # I2PControl mandated SSL, even tho we will be localhost.
         # Since we don't know the cert, and it's local, let's ignore it.
         proto = 'http'
-        self._ssl = None
+        self._requests = requests.Session()
         if ssl_cert is not None:
-                self._ssl = ssl_cert
-                proto += 's'
+            self._requests.verify = ssl_cert
+            proto += 's'
+            self._requests.mount('{}://'.format(proto), _I2PControlAdaptor())
+
         self._password = password
         self._token = None
         self._url = ''.join(['{}://'.format(proto),address[0],':',str(address[1]),'/'])
@@ -87,7 +96,7 @@ class I2PController:
         self._token = result['Token']
 
         if result['API'] != I2PController.API_VERSION:
-            print('looks like the api\'s do not match')
+            raise Exception('looks like the api\'s do not match')
 
     def _call(self, method, args):
         """call jsonrpc method
@@ -99,25 +108,23 @@ class I2PController:
              "params": args
         }
         body = json.dumps(req)
+        return self._request(body)
+
+    def _request(self, body):
         params = {
-                "headers": {"Content-Type": "application/json; charset=utf-8"},
-                "url": self._url,
-                "data": body,
+            "headers": {"Content-Type": "application/json; charset=utf-8"},
+            "url": self._url,
+            "data": body,
         }
-        if self._ssl is not None:
-            params["verify"] = False
-        resp = requests.post(**params)
+        resp = self._requests.post(**params)
         j = None
         if resp.status_code == 200:
-            try:
-                 j = json.loads(resp.text)
-            except Exception as e:
-                 print(resp.text)
-                 raise e
+            j = json.loads(resp.text)
             if "error" in j:
                  err = j["error"]
                  raise Exception(err["message"])
-        return j["result"]
+        if "result" in j:
+            return j["result"]
         
     # Echo
     def echo(self, string='echo'):
