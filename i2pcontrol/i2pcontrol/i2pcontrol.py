@@ -62,7 +62,9 @@ class I2PControlErrors():
     API_INCOMPATIBLE = -32006
 
 class _I2PControlAdaptor(requests.adapters.HTTPAdapter):
-
+    """
+    requests http adapter that rewrites asserted hostname
+    """
     def cert_verify(self, conn, url, verify, cert):
         conn.assert_hostname = 'i2pd.i2pcontrol'
         return super().cert_verify(conn, url, verify, cert)
