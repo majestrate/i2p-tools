@@ -356,9 +356,9 @@ func (s *samSession) Accept() (c net.Conn, err error) {
 	var nc net.Conn
   nc, err = s.connect("")
 	if err == nil {
-		_, err = fmt.Fprintf(c, "STREAM ACCEPT ID=%s SILENT=false\n", s.name)
+		_, err = fmt.Fprintf(nc, "STREAM ACCEPT ID=%s SILENT=false\n", s.name)
 		if err == nil {
-			r := bufio.NewReader(c)
+			r := bufio.NewReader(nc)
 			var line string
 			line, err = r.ReadString(10)
 			if err == nil {
